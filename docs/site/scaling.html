@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>WorkerApp — Scaling</title>
+<title>WorkerChat — Scaling</title>
 <meta name="description" content="How the two messaging paths behave at 10, 100, 10k and 100k workers — they break in completely different dimensions — plus the per-worker-number ceiling and the portfolio single-point-of-failure.">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <a class="nav-brand" href="index.html">Worker<span>Chat</span></a>
     <div class="nav-links">
       <a href="index.html">Overview</a>
       <a href="infrastructure.html">Infrastructure</a>
@@ -26,12 +26,11 @@
 </nav>
 
 <header class="hero">
-  <p class="eyebrow">Growth · 10 → 100 → 10k → 100k workers</p>
-  <h1>The two paths don't break the same way — and that's the whole point.</h1>
-  <p class="lede">When people ask "does it scale?", the honest answer is: it depends which path,
-  and the two fail in completely different places. The official path is slow and bureaucratic but
-  stable; the unofficial path is cheap to start but fragile the moment you have more than a few
-  hundred sessions. Knowing exactly where each one bends is what lets us plan around it.</p>
+  <p class="eyebrow">10 → 100 → 10k → 100k workers</p>
+  <h1>The two paths break in different places.</h1>
+  <p class="lede">"Does it scale?" depends on which path. The official path is slow and bureaucratic
+  but stable; the unofficial path is cheap to start but gets fragile once you have more than a few
+  hundred sessions. Knowing where each one bends is what lets us plan around it.</p>
 </header>
 
 <main class="wrap">
@@ -42,7 +41,7 @@
       <li><a href="#table">Both paths at four scales</a></li>
       <li><a href="#ceiling">The per-worker-number ceiling</a></li>
       <li><a href="#spof">The portfolio single-point-of-failure</a></li>
-      <li><a href="#net">Net: what we actually do</a></li>
+      <li><a href="#net">What we actually do</a></li>
     </ul>
   </div>
 
@@ -134,14 +133,14 @@ flowchart LR
   single-point-of-failure, and the response is architectural: <strong>isolate portfolios</strong> so
   a problem in one can't cascade across the whole user base.</p>
   <div class="callout warn">
-    <span class="label">The honest version of "cascade ban"</span>
+    <span class="label">What "cascade ban" actually means</span>
     <p>The dramatic "one ban chain-bans everyone" story is, for the unofficial path, mostly
     unproven vendor speculation. The <em>real</em> cascade risks are two undramatic ones: a fleet
     sharing one library fingerprint getting caught in a single detection wave, and this documented
     portfolio-pooling on the official side. We design for both rather than for the myth.</p>
   </div>
 
-  <h2 id="net">Net: what we actually do</h2>
+  <h2 id="net">What we actually do</h2>
   <div class="cards">
     <div class="card"><p class="k">Pool, don't dedicate</p><p>Shared numbers across multiple business
     accounts from early on — never one number per worker at scale.</p></div>
@@ -187,7 +186,7 @@ flowchart LR
 
 <footer class="site">
   <div class="wrap">
-    <p><strong>WorkerApp</strong> — investor scoping site. Scaling figures trace to
+    <p><strong>WorkerChat</strong> — investor scoping site. Scaling figures trace to
     <code>docs/research/00_synthesis.md</code> §7. Number caps, tiers and throughput are Meta-set and
     revised periodically — re-verify before scaling.</p>
   </div>
@@ -197,11 +196,13 @@ flowchart LR
 <script>
   mermaid.initialize({
     startOnLoad: true,
-    theme: "base",
+    theme: "dark",
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
-      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
-      lineColor: "#4a5568", fontSize: "14px"
+      background: "#1a2230",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#5fb0d0", primaryTextColor: "#1b2330",
+      secondaryColor: "#222c3a", tertiaryColor: "#222c3a",
+      lineColor: "#aab6c4", textColor: "#e6ebf2", fontSize: "14px"
     },
     flowchart: { curve: "basis", useMaxWidth: true }
   });

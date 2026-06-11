@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>WorkerApp — Technical, APIs &amp; Constraints</title>
+<title>WorkerChat — Technical, APIs &amp; Constraints</title>
 <meta name="description" content="The stack, the MessagingProvider abstraction that makes channels swappable, the hard platform constraints, and the day-one security guardrails.">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <a class="nav-brand" href="index.html">Worker<span>Chat</span></a>
     <div class="nav-links">
       <a href="index.html">Overview</a>
       <a href="infrastructure.html">Infrastructure</a>
@@ -26,12 +26,11 @@
 </nav>
 
 <header class="hero">
-  <p class="eyebrow">For the technical reader · Stack &amp; constraints</p>
-  <h1>How it's built, and the walls it's built around.</h1>
-  <p class="lede">This page is denser by design — it's for the technical diligence reader. The
-  headline: a small, boring, proven stack; one abstraction that makes the messaging channel
-  swappable; a clear-eyed list of the platform constraints we can't engineer away; and security
-  guardrails switched on from the first commit.</p>
+  <p class="eyebrow">Stack and constraints</p>
+  <h1>How it's built, and the limits it's built around.</h1>
+  <p class="lede">This page is more detailed than the rest — it's for the technical reader. In short:
+  a small, proven stack; one piece of structure that makes the messaging channel swappable; the
+  platform limits we can't get around; and security set up from the first commit.</p>
 </header>
 
 <main class="wrap">
@@ -42,15 +41,15 @@
       <li><a href="#stack">The stack</a></li>
       <li><a href="#provider">The MessagingProvider abstraction</a></li>
       <li><a href="#decouple">Why the session can't be serverless</a></li>
-      <li><a href="#constraints">Hard platform constraints</a></li>
-      <li><a href="#security">Day-one security guardrails</a></li>
+      <li><a href="#constraints">Platform limits we can't get around</a></li>
+      <li><a href="#security">Security from day one</a></li>
       <li><a href="#docs">API &amp; reference docs</a></li>
     </ul>
   </div>
 
   <h2 id="stack">The stack</h2>
-  <p>A pragmatic monorepo for a small team driving AI tooling. Nothing exotic — every piece is
-  chosen because it's well-trodden and the failure modes are known.</p>
+  <p>A monorepo, sized for a small team. Nothing unusual — each piece is chosen because it's
+  well-used and its failure modes are known.</p>
   <div class="cards">
     <div class="card"><p class="k">apps/web</p><p>Next.js + TypeScript on Vercel. The CRM UI, the
     AI assist, the connect screens. <strong>Never imports a chat SDK.</strong></p></div>
@@ -95,11 +94,10 @@ flowchart TD
   </div>
 
   <h2 id="provider">The MessagingProvider abstraction</h2>
-  <p>This one interface is what makes "lose a channel, not your business" true in code. WhatsApp
-  (official), WhatsApp (unofficial fallback) and Telegram are three <strong>implementations of a
-  single interface</strong>. The CRM only ever sees the interface — it never knows or cares which
-  channel a message rode in on. Adding Signal later means writing one more implementation, not
-  touching the CRM.</p>
+  <p>This interface is what makes "lose a channel, not your business" work in code. WhatsApp
+  (official), WhatsApp (unofficial fallback) and Telegram are three implementations of one interface.
+  The CRM only sees the interface; it doesn't know which channel a message came in on. Adding Signal
+  later means writing one more implementation, without touching the CRM.</p>
 
   <details class="tech">
     <summary>Tech info: the interface and the capability-driven UI <span class="tag">For technical readers</span></summary>
@@ -139,17 +137,17 @@ flowchart TD
   must stay alive 24/7 — even while the worker's phone is off. Serverless platforms (like Vercel
   Functions) cap function runtime at a few minutes and explicitly can't act as a long-lived
   connection server. So the session layer lives in a dedicated, always-on process; the CRM stays
-  serverless and talks to it only through the database. This split isn't a preference — it's a
-  hard technical boundary, and it's why hosting the worker is a real (paid) line item.</p>
+  serverless and talks to it only through the database. This split isn't a preference; it's a
+  technical requirement, and it's why hosting the worker is a real (paid) line item.</p>
   <div class="callout warn">
-    <span class="label">A subtle but fatal gotcha</span>
-    <p>Free database projects <strong>pause after about 7 days idle</strong> — fatal for an
-    always-needed messaging session. The worker and its Redis must be on <strong>paid, always-on</strong>
-    hosting from day one. Budgeted for; see <a href="costs.html">Costs</a>.</p>
+    <span class="label">An easy thing to get caught by</span>
+    <p>Free database projects <strong>pause after about 7 days idle</strong>, which would break an
+    always-needed messaging session. The worker and its Redis need <strong>paid, always-on</strong>
+    hosting from day one. This is budgeted for; see <a href="costs.html">Costs</a>.</p>
   </div>
 
-  <h2 id="constraints">Hard platform constraints we can't engineer away</h2>
-  <p>Honesty about limits is part of the diligence. These are walls, not bugs:</p>
+  <h2 id="constraints">Platform limits we can't get around</h2>
+  <p>It's worth being clear about the limits. These are fixed, not things we can build past:</p>
   <div class="table-scroll">
   <table>
     <thead><tr><th>Constraint</th><th>What it means</th><th>How we live with it</th></tr></thead>
@@ -184,9 +182,9 @@ flowchart TD
   §2. All platform numbers are medium-confidence and revised by Meta periodically — re-verify before
   any launch.</p>
 
-  <h2 id="security">Day-one security guardrails</h2>
-  <p>Security here isn't a phase — it's switched on from the first commit, because the data is too
-  sensitive for "we'll harden it later."</p>
+  <h2 id="security">Security from day one</h2>
+  <p>Security isn't a later phase here. It's set up from the first commit, because the data is too
+  sensitive to leave for "we'll harden it later".</p>
   <div class="cards">
     <div class="card"><p class="k">Secrets</p><p>Gitignored env files, a secrets manager, and an
     <strong>explicit deny-rule</strong> so the AI coding tool itself can't read <code>.env</code> —
@@ -217,7 +215,7 @@ flowchart TD
         row's owner; <code>service_role</code> is worker-only, never in the browser.</li>
         <li><strong>Encryption</strong> — libsodium XChaCha20-Poly1305, per-user DEK via envelope
         encryption, key material in a KMS loaded only during a live session. See
-        <a href="infrastructure.html">Infrastructure</a> for the honest threat model.</li>
+        <a href="infrastructure.html">Infrastructure</a> for the threat model.</li>
         <li><strong>CI on every PR</strong> — eslint, <code>tsc --noEmit</code>, tests, gitleaks,
         and the RLS grep.</li>
       </ul>
@@ -256,7 +254,7 @@ flowchart TD
 
 <footer class="site">
   <div class="wrap">
-    <p><strong>WorkerApp</strong> — investor scoping site. Stack and constraints trace to
+    <p><strong>WorkerChat</strong> — investor scoping site. Stack and constraints trace to
     <code>docs/research/00_synthesis.md</code> §3, §9 and <code>docs/CONTRACTS.md</code>. Platform
     limits are medium-confidence and must be re-verified before launch.</p>
   </div>
@@ -266,11 +264,13 @@ flowchart TD
 <script>
   mermaid.initialize({
     startOnLoad: true,
-    theme: "base",
+    theme: "dark",
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
-      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
-      lineColor: "#4a5568", fontSize: "14px"
+      background: "#1a2230",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#5fb0d0", primaryTextColor: "#1b2330",
+      secondaryColor: "#222c3a", tertiaryColor: "#222c3a",
+      lineColor: "#aab6c4", textColor: "#e6ebf2", fontSize: "14px"
     },
     flowchart: { curve: "basis", useMaxWidth: true }
   });

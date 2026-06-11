@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>WorkerApp — The Chat Layer</title>
-<meta name="description" content="The heart of the plan: official vs unofficial WhatsApp, honestly; Telegram as a sanctioned second channel; ban mechanics; and the two-week test that decides everything.">
+<title>WorkerChat — The Chat Layer</title>
+<meta name="description" content="Official vs unofficial WhatsApp, the 24-hour window, Telegram as a second channel, how bans happen, and the two-week test that decides the approach.">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <a class="nav-brand" href="index.html">Worker<span>Chat</span></a>
     <div class="nav-links">
       <a href="index.html">Overview</a>
       <a href="infrastructure.html">Infrastructure</a>
@@ -26,12 +26,11 @@
 </nav>
 
 <header class="hero">
-  <p class="eyebrow">The centerpiece · How messages actually flow</p>
-  <h1>The chat layer is where this product lives or dies.</h1>
-  <p class="lede">Everything else — the CRM, the AI, the pretty dashboards — is well-understood and
-  buildable. The hard, unknowable part is whether a worker can keep talking to clients on WhatsApp
-  without losing the account. This page is honest about that, and explains the test that settles it
-  in two weeks for under $100.</p>
+  <p class="eyebrow">How messages flow</p>
+  <h1>The chat layer is the part most likely to break.</h1>
+  <p class="lede">The CRM and the AI are well understood and buildable. The harder question is whether
+  a worker can keep talking to clients on WhatsApp without losing the account. This page covers what
+  we know about that, and the two-week test we'd run to find out for real.</p>
 </header>
 
 <main class="wrap">
@@ -39,21 +38,20 @@
   <div class="toc">
     <div class="further-h">On this page</div>
     <ul>
-      <li><a href="#triangle">The impossible triangle</a></li>
+      <li><a href="#triangle">The three goals that don't fit together</a></li>
       <li><a href="#collision">Official vs unofficial</a></li>
       <li><a href="#window">The 24-hour window</a></li>
-      <li><a href="#native">What "native" really means</a></li>
-      <li><a href="#bans">How bans actually happen</a></li>
+      <li><a href="#native">What "looks native" actually means</a></li>
+      <li><a href="#bans">How bans happen</a></li>
       <li><a href="#telegram">Telegram, the second channel</a></li>
       <li><a href="#killtest">The kill-test</a></li>
       <li><a href="#verdict">The verdict</a></li>
     </ul>
   </div>
 
-  <h2 id="triangle">The impossible triangle</h2>
-  <p>The original brief asked for three things from WhatsApp at once. Each sounds reasonable. The
-  research found that <strong>you can have any one or two of them, but never all three on a single
-  path.</strong></p>
+  <h2 id="triangle">The three goals that don't fit together</h2>
+  <p>The original brief asked for three things from WhatsApp at once. Each one is reasonable on its
+  own. The research found you can have any one or two of them, but not all three on a single path.</p>
 
   <div class="diagram">
     <pre class="mermaid">
@@ -76,15 +74,15 @@ flowchart TD
     <strong>5–15%</strong>.</p>
   </div>
 
-  <p>So we keep the goals that matter — a worker who books faster and stays safer — and choose the
-  combination that actually survives: <strong>history stays on the worker's own phone</strong>
-  (only a recent window syncs into the CRM), <strong>a business account on the same number</strong>
-  (native-enough), and <strong>a sanctioned path plus a second channel</strong> so a single ban is
-  never the end. The rest of this page shows the evidence for each trade.</p>
+  <p>So we keep the goals that matter — a worker who books faster and stays safer — and pick the
+  combination that holds up: history stays on the worker's own phone (only a recent window syncs into
+  the CRM), a business account on the same number (close enough to native), and a sanctioned path
+  plus a second channel so a single ban isn't the end of it. The rest of this page is the evidence
+  for each of those choices.</p>
 
-  <h2 id="collision">Official vs unofficial WhatsApp — the honest comparison</h2>
-  <p>There are two ways to connect to WhatsApp. They are not "good and better" — they are two
-  completely different risk profiles, and the choice shapes the whole company.</p>
+  <h2 id="collision">Official vs unofficial WhatsApp</h2>
+  <p>There are two ways to connect to WhatsApp. They aren't "good and better" — they're two different
+  risk profiles, and which one you pick shapes the whole business.</p>
 
   <div class="table-scroll">
   <table>
@@ -188,7 +186,7 @@ flowchart TD
         <li><strong>whatsapp-web.js</strong> — drives a headless Chromium (~250–400 MB/session,
         ~50/server, needs browser restarts every 1–2h). Heavier; bans reported almost immediately on
         connect.</li>
-        <li>Hosted gray-market wrappers (Whapi, GreenAPI, WAHA) offer flat per-number pricing but
+        <li>Hosted grey-market wrappers (Whapi, GreenAPI, WAHA) offer flat per-number pricing but
         <strong>can read all message content</strong> — a hard objection for sensitive users.
         (GreenAPI is community-flagged as Russia-linked; WAHA self-hosted keeps data on your infra.)</li>
       </ul>
@@ -210,8 +208,8 @@ flowchart TD
     </div>
   </details>
 
-  <h2 id="window">The 24-hour window — the other hard wall</h2>
-  <p>Even on the safe official path, you can't just message clients whenever you like. WhatsApp only
+  <h2 id="window">The 24-hour window</h2>
+  <p>Even on the official path, a business can't message clients whenever it likes. WhatsApp only
   lets a business send <strong>free-form</strong> messages inside a <strong>24-hour window that the
   client opens by messaging first</strong>. Each new message from the client resets the clock.
   Outside that window, the business can only send <strong>pre-approved template messages</strong>.</p>
@@ -220,7 +218,7 @@ flowchart TD
     <pre class="mermaid">
 sequenceDiagram
   participant Client
-  participant Worker as Worker (via WorkerApp)
+  participant Worker as Worker (via WorkerChat)
   Client->>Worker: "Hi, are you free Friday?"
   Note over Worker: 24h window OPENS — free replies allowed
   Worker->>Client: Free-form reply (drafted by AI, worker-approved)
@@ -229,13 +227,13 @@ sequenceDiagram
   Worker--xClient: ✗ Cannot send a free-form re-engagement
   Worker->>Client: ✓ Only a pre-approved TEMPLATE message
     </pre>
-    <p class="figcap">Figure 2 — Inside the window, replies are free and natural. Outside it, only
-    approved templates. WorkerApp's UI shows the worker exactly which state they're in.</p>
+    <p class="figcap">Figure 2 — Inside the window, replies are free. Outside it, only approved
+    templates. The app shows the worker which state each conversation is in.</p>
   </div>
 
-  <p>This is a real constraint on the fantasy of "just text all my clients naturally any time." But
-  it's a <em>manageable</em> one: most of a worker's conversation happens inside live windows (and
-  those replies are free), and the CRM surfaces the window state so nobody is surprised.</p>
+  <p>So "just text all my clients any time" isn't quite how it works. It's manageable though: most of
+  a worker's messaging happens inside a live window (where replies are free), and the app shows the
+  window state so nobody gets caught out.</p>
 
   <details class="tech">
     <summary>Tech info: window pricing and message categories <span class="tag">For technical readers</span></summary>
@@ -250,11 +248,10 @@ sequenceDiagram
         <li><strong>Free entry-point</strong> (click-to-WhatsApp ad / Page CTA): all messages free
         for 72h.</li>
       </ul>
-      <p>The cost lever is obvious: keep replies <em>inside</em> the free window and the messaging
-      bill collapses to marketing-only. This is why AI inference, not messaging, is the dominant
-      cost — see the <a href="costs.html">Costs</a> page. <em>All rates are medium-confidence; Meta
-      revises the rate card roughly every 6 months — re-verify the destination-country line before
-      committing.</em></p>
+      <p>The cost lever: keep replies <em>inside</em> the free window and the messaging bill drops to
+      marketing-only. That's why AI inference, not messaging, is the bigger cost — see the
+      <a href="costs.html">Costs</a> page. <em>All rates are medium-confidence; Meta revises the rate
+      card roughly every 6 months, so re-check the destination-country line before committing.</em></p>
       <div class="further">
         <div class="further-h">Further reading</div>
         <ul>
@@ -265,20 +262,18 @@ sequenceDiagram
     </div>
   </details>
 
-  <h2 id="native">What "appear as native" really means</h2>
-  <p>The honest answer: on the safe path, the worker's number becomes a <strong>WhatsApp Business
-  account</strong> — same phone number, same single chat thread the client already knows, the green
-  Business app still on the worker's phone. To the client it looks and behaves like a normal
-  business chat. It is <em>native-enough</em>: nobody has to change their number, and the client
-  keeps chatting in the same thread.</p>
-  <p>What it is <strong>not</strong> is an ordinary <em>personal</em> account that looks like a
-  friend texting. That illusion only exists on the unofficial path — and it costs you ban-safety,
-  which is not a trade worth making for a tool people depend on for income and safety. We choose to
-  be straight about this rather than promise something we'd have to walk back.</p>
+  <h2 id="native">What "looks native" actually means</h2>
+  <p>On the official path, the worker's number becomes a <strong>WhatsApp Business account</strong>:
+  same phone number, same chat thread the client already knows, the green Business app still on the
+  worker's phone. To the client it looks like a normal business chat. That's close enough to native —
+  nobody changes their number, and the client keeps messaging in the same thread.</p>
+  <p>What it isn't is an ordinary <em>personal</em> account that looks like a friend texting. That
+  only happens on the unofficial path, and it costs you ban-safety — not a trade worth making for a
+  tool people rely on for income and safety. Better to be straight about it than promise something
+  we'd have to walk back.</p>
 
-  <h2 id="bans">How bans actually happen</h2>
-  <p>Understanding the ban mechanism is what lets us design around it. There are two families of
-  signal:</p>
+  <h2 id="bans">How bans happen</h2>
+  <p>Knowing how the bans work is what lets us design around them. There are two kinds of signal:</p>
   <div class="cards">
     <div class="card">
       <p class="k">Fingerprinting</p>
@@ -306,17 +301,17 @@ sequenceDiagram
   </ul>
 
   <div class="callout warn">
-    <span class="label">Why decoupling is non-negotiable</span>
-    <p>On a ban, an unprotected design loses the dangerous-client flags <em>exactly when they're
-    needed most</em>. WorkerApp keeps those flags — and all CRM data — completely separate from the
-    messaging session, so a ban costs a channel, not a worker's safety net.</p>
+    <span class="label">Why the records have to be separate</span>
+    <p>If the records lived inside the messaging session, a ban would take the dangerous-client flags
+    with it — right when they matter most. WorkerChat keeps those flags, and all the CRM data, separate
+    from the messaging session, so a ban costs a channel and nothing else.</p>
   </div>
 
-  <h2 id="telegram">Telegram — the sanctioned second channel</h2>
-  <p>The simplest insurance against "what if WhatsApp bans us?" is to not depend on WhatsApp alone.
-  Telegram offers a <strong>sanctioned, official bot API</strong> — no adult-content ban, global
-  reach, and no gray-market risk. It runs behind the very same internal interface as WhatsApp, so
-  to the rest of WorkerApp it's just another channel.</p>
+  <h2 id="telegram">Telegram, the second channel</h2>
+  <p>The simplest cover against "what if WhatsApp bans us?" is to not rely on WhatsApp alone. Telegram
+  has an official bot API — no adult-content ban, works globally, and none of the grey-market risk. It
+  sits behind the same internal interface as WhatsApp, so to the rest of WorkerChat it's just another
+  channel.</p>
 
   <div class="diagram">
     <pre class="mermaid">
@@ -334,22 +329,21 @@ flowchart LR
   classDef chl fill:#f6f8fb,stroke:#a8b4c2,color:#717c8c,stroke-dasharray: 4 3;
   classDef crm fill:#eef2f7,stroke:#4a5568,color:#1b2330;
     </pre>
-    <p class="figcap">Figure 3 — Channels are swappable behind one interface. A WhatsApp ban
-    degrades to a single-channel outage, not a business-ending event. Detail on the
+    <p class="figcap">Figure 3 — Channels swap behind one interface. A WhatsApp ban becomes a
+    single-channel outage rather than the end of the business. Detail on the
     <a href="technical.html">Technical</a> page.</p>
   </div>
 
-  <h2 id="killtest">The kill-test — settle the biggest unknown first</h2>
-  <p>The single highest-value thing we can do is <strong>not</strong> build a grand architecture.
-  It's to run a cheap, brutal experiment that tries to <em>falsify</em> the whole premise before a
-  line of platform code is written. If a throwaway number gets banned in hours, we've learned the
-  most important fact in the business for the price of a coffee — and that's a <em>good</em> outcome.</p>
+  <h2 id="killtest">The kill-test</h2>
+  <p>The most useful first move isn't to build a big architecture. It's to run a cheap experiment that
+  tries to disprove the whole idea before any platform code is written. If a throwaway number gets
+  banned in hours, that's worth knowing early — and it's a cheap way to find out.</p>
 
-  <p>Concretely: run <strong>one throwaway number</strong> through an off-the-shelf bridge with
-  human-paced, realistic traffic, and measure two things — <strong>how long until it's banned</strong>,
-  and <strong>how much real history actually comes back</strong>. In parallel, stand up a single
-  official Coexistence number to check regional availability and the real sync depth. Write no
-  platform code until the first test passes.</p>
+  <p>The test: run <strong>one throwaway number</strong> through an off-the-shelf bridge with realistic,
+  human-paced traffic, and measure two things — <strong>how long until it's banned</strong> and
+  <strong>how much real history comes back</strong>. Alongside it, set up a single official Coexistence
+  number to check regional availability and the actual sync depth. No platform code gets built until
+  the first test passes.</p>
 
   <div class="table-scroll">
   <table>
@@ -415,10 +409,10 @@ flowchart LR
     in.</strong> When it lands, this section reports the verdict and the measured numbers
     (time-to-ban, history depth, regional availability) sourced directly from that file — not from
     the research, and not invented here.</p>
-    <p style="margin-bottom:0"><strong>What we expect, and why it's still a win either way:</strong>
-    if the unofficial number is banned fast, the premise-as-originally-written is cheaply falsified
-    and we commit fully to the official + Telegram path. If it survives four weeks, we gain a scoped
-    fallback for regions where the official path isn't available. Both outcomes are designed for.</p>
+    <p style="margin-bottom:0"><strong>What we expect, and why either result is useful:</strong> if
+    the unofficial number is banned quickly, the original premise is disproved cheaply and we commit
+    to the official + Telegram path. If it lasts four weeks, we get a fallback for regions where the
+    official path isn't available. We've planned for both.</p>
   </div>
 
   <p class="src">Per <code>tracks/C-scoping-site.md</code>, the kill-test verdict on this page is
@@ -434,7 +428,7 @@ flowchart LR
 
 <footer class="site">
   <div class="wrap">
-    <p><strong>WorkerApp</strong> — investor scoping site. The chat-layer figures trace to
+    <p><strong>WorkerChat</strong> — investor scoping site. The chat-layer figures trace to
     <code>docs/research/00_synthesis.md</code> §2–4; the kill-test verdict traces to
     <code>docs/killtest/results.md</code> when available. Platform pricing and regional availability
     must be re-verified before launch.</p>
@@ -445,11 +439,13 @@ flowchart LR
 <script>
   mermaid.initialize({
     startOnLoad: true,
-    theme: "base",
+    theme: "dark",
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
-      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
-      lineColor: "#4a5568", fontSize: "14px"
+      background: "#1a2230",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#5fb0d0", primaryTextColor: "#1b2330",
+      secondaryColor: "#222c3a", tertiaryColor: "#222c3a",
+      lineColor: "#aab6c4", textColor: "#e6ebf2", fontSize: "14px"
     },
     flowchart: { curve: "basis", useMaxWidth: true },
     sequence: { useMaxWidth: true }

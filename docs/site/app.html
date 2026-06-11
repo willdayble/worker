@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>WorkerApp — The CRM App</title>
+<title>WorkerChat — The CRM App</title>
 <meta name="description" content="What the worker actually uses: onboarding, the inbox-to-booking flow, tagging, closing the loop, knowing where clients came from, and a disclosed AI assistant that never acts on its own.">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <a class="nav-brand" href="index.html">Worker<span>Chat</span></a>
     <div class="nav-links">
       <a href="index.html">Overview</a>
       <a href="infrastructure.html">Infrastructure</a>
@@ -26,13 +26,12 @@
 </nav>
 
 <header class="hero">
-  <p class="eyebrow">The product · What the worker uses every day</p>
-  <h1>An inbox that turns messages into booked, safer work.</h1>
-  <p class="lede">This is the part that looks like a normal, friendly app — because the hard
-  problems are handled underneath it. A worker connects a channel, sees their conversations, and
-  moves each one from "just enquired" to "booked and done" with less typing, fewer time-wasters,
-  and a quiet safety net. None of these patterns are novel; the research is clear that this layer is
-  a <em>solved problem to borrow from</em>, not to reinvent.</p>
+  <p class="eyebrow">What the worker uses</p>
+  <h1>The app the worker uses instead of WhatsApp.</h1>
+  <p class="lede">Conversations come through WhatsApp and clients chat as normal, while the worker
+  uses this app instead of the WhatsApp app. They see their conversations, move each one from enquiry
+  to booked and done, and keep notes and safety flags as they go. These are well-understood CRM
+  patterns; the research points to existing tools to borrow from rather than inventing anything new.</p>
 </header>
 
 <main class="wrap">
@@ -40,31 +39,31 @@
   <div class="toc">
     <div class="further-h">On this page</div>
     <ul>
-      <li><a href="#onboard">Onboarding in one sitting</a></li>
-      <li><a href="#flow">Inbox → booking, step by step</a></li>
-      <li><a href="#tagging">Tagging &amp; the services menu</a></li>
-      <li><a href="#closeloop">Closing the loop</a></li>
-      <li><a href="#attribution">Knowing where clients came from</a></li>
-      <li><a href="#ai">The disclosed AI assistant</a></li>
-      <li><a href="#safety">The safety net</a></li>
+      <li><a href="#onboard">Getting set up</a></li>
+      <li><a href="#flow">Inbox to booking</a></li>
+      <li><a href="#tagging">Tagging and the services menu</a></li>
+      <li><a href="#closeloop">Recording how a booking ended</a></li>
+      <li><a href="#attribution">Where clients came from</a></li>
+      <li><a href="#ai">The AI assistant</a></li>
+      <li><a href="#safety">Safety</a></li>
     </ul>
   </div>
 
-  <h2 id="onboard">Onboarding in one sitting</h2>
-  <p>A worker should be productive the first afternoon. Onboarding is: create an account, connect a
-  channel (scan a code or enter a pairing code, depending on the channel), watch recent
-  conversations flow in, and read a plain-language notice about what the AI does and what the app
-  can and can't see. No data migration project, no training course.</p>
+  <h2 id="onboard">Getting set up</h2>
+  <p>Workers should be able to see it work in a day or so. Setup is: create an account, connect a
+  channel (scan a code or enter a pairing code, depending on the channel), watch recent conversations
+  come in, and read a plain-language notice about what the AI does and what the app can and can't
+  see.</p>
   <div class="callout">
-    <span class="label">Honest by default</span>
-    <p>The onboarding notice covers <strong>both</strong> directions of AI use — drafting replies
-    <em>and</em> analysing incoming messages — and states plainly that during the prototype the
-    operator can technically decrypt data while a session is live. Consent is informed, not buried.</p>
+    <span class="label">What the notice covers</span>
+    <p>The notice covers <strong>both</strong> directions of AI use — drafting replies <em>and</em>
+    analysing incoming messages — and says plainly that during the prototype the operator can
+    technically decrypt data while a session is live. The consent is clear rather than buried.</p>
   </div>
 
-  <h2 id="flow">Inbox → booking, step by step</h2>
-  <p>Every conversation moves along a simple, neutral pipeline. The worker is always in control; the
-  app just removes friction and forgetting.</p>
+  <h2 id="flow">Inbox to booking</h2>
+  <p>Conversations come through WhatsApp, where clients chat as normal, while the worker uses this
+  app instead of WhatsApp. Each conversation moves through a simple set of stages.</p>
 
   <div class="diagram">
     <pre class="mermaid">
@@ -102,28 +101,28 @@ flowchart LR
     accident of wording.</p>
   </div>
 
-  <h2 id="closeloop">Closing the loop</h2>
-  <p>The single most valuable habit the app builds is recording how each booking <em>ended</em>.
-  Four neutral outcomes capture almost everything worth knowing:</p>
+  <h2 id="closeloop">Recording how a booking ended</h2>
+  <p>The most useful habit the app encourages is recording how each booking ended. Four outcomes
+  cover most of what's worth knowing:</p>
   <div class="cards">
     <div class="card"><p class="k" style="color:var(--good)">Won</p><p>Booked and completed. Service,
-    fee and date logged — the raw material for every later insight.</p></div>
-    <div class="card"><p class="k">Lost</p><p>Didn't convert, for ordinary reasons. Useful for
-    understanding conversion.</p></div>
-    <div class="card"><p class="k" style="color:var(--warn)">Time-waster</p><p>Never going to book.
-    Recognising the pattern protects the worker's attention.</p></div>
+    fee and date logged — the basis for everything the dashboards show later.</p></div>
+    <div class="card"><p class="k">Lost</p><p>Didn't convert, for ordinary reasons. Useful for seeing
+    conversion.</p></div>
+    <div class="card"><p class="k" style="color:var(--warn)">Time-waster</p><p>Was never going to
+    book. Recording it helps the worker spot the pattern next time.</p></div>
     <div class="card"><p class="k" style="color:var(--bad)">Dangerous</p><p>Flagged for safety —
-    advisory, human-set, and decoupled so it survives a ban.</p></div>
+    advisory, set by a person, and kept separate from the channel so it survives a ban.</p></div>
   </div>
-  <p>Because outcomes are logged consistently, the cross-user dashboards (built for the test phase,
-  with explicit consent) can surface things no individual worker could see alone: which sources
-  convert, time-to-book, where time-wasters cluster.</p>
+  <p>Because outcomes are recorded the same way each time, the cross-user dashboards (built for the
+  test phase, with explicit consent) can show things a single worker couldn't see on their own:
+  which sources convert, time-to-book, where time-wasters cluster.</p>
 
-  <h2 id="attribution">Knowing where clients came from</h2>
-  <p>When a new client first makes contact, the app records <strong>where they came from</strong> —
-  which advert, link, or page — and writes it down <strong>once, permanently</strong>, at the moment
-  the contact is created. First-touch attribution is a well-worn convention; the only discipline
-  that matters is writing it once and never overwriting it.</p>
+  <h2 id="attribution">Where clients came from</h2>
+  <p>When a new client first gets in touch, the app records where they came from — which advert, link,
+  or page — and writes it down once, at the point the contact is created. This is a standard
+  first-touch attribution approach; the only thing that matters is writing it once and never
+  overwriting it.</p>
   <details class="tech">
     <summary>Tech info: how first-touch attribution is captured <span class="tag">For technical readers</span></summary>
     <div class="tech-body">
@@ -140,11 +139,10 @@ flowchart LR
     </div>
   </details>
 
-  <h2 id="ai">The disclosed AI assistant</h2>
-  <p>The AI is a <strong>collaborator, never an autopilot</strong>. For each incoming message it does
-  one structured analysis — is this a booking? what's the intent? any safety red flags? a suggested
-  reply — and then hands everything to the worker. The rules that decide what happens next live in
-  <strong>ordinary, predictable code, not the model</strong>.</p>
+  <h2 id="ai">The AI assistant</h2>
+  <p>The AI helps; it doesn't act on its own. For each incoming message it does one analysis — is this
+  a booking? what's the intent? any safety red flags? a suggested reply — and hands it all to the
+  worker. The rules that decide what happens next live in ordinary code, not the model.</p>
 
   <div class="diagram">
     <pre class="mermaid">
@@ -166,10 +164,10 @@ flowchart TD
   </div>
 
   <div class="callout warn">
-    <span class="label">Two hard rules, no exceptions</span>
-    <p><strong>Never auto-send. Never auto-block.</strong> A wrongly-sent message or a false
-    "time-waster" flag has real consequences — a denied booking is lost income for the worker. So
-    the AI is advisory on the way in and collaborative on the way out, every time.</p>
+    <span class="label">Two rules that don't change</span>
+    <p><strong>Never auto-send. Never auto-block.</strong> A wrongly-sent message, or a false
+    "time-waster" flag, has real consequences — a missed booking is lost income for the worker. So the
+    AI only advises on incoming messages, and only drafts outgoing ones for the worker to approve.</p>
   </div>
 
   <details class="tech">
@@ -202,12 +200,12 @@ flowchart TD
     </div>
   </details>
 
-  <h2 id="safety">The safety net</h2>
-  <p>Safety is woven through the whole app, not bolted on. An optional external screening source can
-  be checked at the screening stage; an AI behavioural signal flags concerning patterns as a
-  <em>separate, advisory</em> input; and every dangerous-client flag is human-set, append-only,
-  audit-logged, and — crucially — stored independently of the messaging channel so a ban can never
-  erase it. False positives are recoverable by a human, because a wrong flag has real costs too.</p>
+  <h2 id="safety">Safety</h2>
+  <p>Safety runs through the whole app rather than sitting in one feature. An optional external
+  screening source can be checked at the screening stage; an AI signal flags concerning patterns as a
+  separate, advisory input; and every dangerous-client flag is set by a person, append-only,
+  audit-logged, and stored separately from the messaging channel so a ban can't erase it. A person can
+  undo a flag too, because a wrong flag has real costs.</p>
   <p class="src">Patterns and guardrails sourced from <code>docs/research/00_synthesis.md</code> §6
   (CRM/app layer — "steal, don't invent") and <code>docs/CONTRACTS.md</code> §6 (AI-assist contract).
   The closest existing blueprints named by the research are Missive (AI rules), Kommo (messenger-
@@ -221,7 +219,7 @@ flowchart TD
 
 <footer class="site">
   <div class="wrap">
-    <p><strong>WorkerApp</strong> — investor scoping site. The CRM layer borrows proven patterns;
+    <p><strong>WorkerChat</strong> — investor scoping site. The CRM layer borrows proven patterns;
     figures and blueprints trace to <code>docs/research/00_synthesis.md</code> §6. The AI never
     auto-sends and never auto-blocks — a frozen product rule, not a setting.</p>
   </div>
@@ -231,11 +229,13 @@ flowchart TD
 <script>
   mermaid.initialize({
     startOnLoad: true,
-    theme: "base",
+    theme: "dark",
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
-      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
-      lineColor: "#4a5568", fontSize: "14px"
+      background: "#1a2230",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#5fb0d0", primaryTextColor: "#1b2330",
+      secondaryColor: "#222c3a", tertiaryColor: "#222c3a",
+      lineColor: "#aab6c4", textColor: "#e6ebf2", fontSize: "14px"
     },
     flowchart: { curve: "basis", useMaxWidth: true }
   });

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>WorkerApp — Costs &amp; Subscription</title>
+<title>WorkerChat — Costs &amp; Subscription</title>
 <meta name="description" content="What it costs to serve one worker at each scale, why AI inference (not messaging) is the real cost driver, and the candidate $19-25 to $9-15 pricing with the margin story.">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <a class="nav-brand" href="index.html">Worker<span>Chat</span></a>
     <div class="nav-links">
       <a href="index.html">Overview</a>
       <a href="infrastructure.html">Infrastructure</a>
@@ -26,12 +26,11 @@
 </nav>
 
 <header class="hero">
-  <p class="eyebrow">The numbers · Cost &amp; pricing</p>
-  <h1>It costs a few dollars a month to serve a worker. We'd charge in the tens.</h1>
-  <p class="lede">The cost structure is unusually friendly, for one counter-intuitive reason: the
-  biggest line item isn't messaging — it's AI. And AI cost is something we control directly through
-  model choice and caching. That gives a comfortable margin and a clear path to lowering the price
-  as we grow.</p>
+  <p class="eyebrow">Cost and pricing</p>
+  <h1>It costs a few dollars a month to serve a worker.</h1>
+  <p class="lede">The biggest cost isn't messaging — it's AI. That's worth knowing, because AI cost is
+  something we control directly through model choice and caching. The result is a comfortable margin
+  and room to lower the price as the user base grows.</p>
 </header>
 
 <main class="wrap">
@@ -39,19 +38,19 @@
   <div class="toc">
     <div class="further-h">On this page</div>
     <ul>
-      <li><a href="#driver">The surprising cost driver</a></li>
+      <li><a href="#driver">Where the cost actually goes</a></li>
       <li><a href="#perworker">Cost per worker at each scale</a></li>
       <li><a href="#levers">The cost levers</a></li>
-      <li><a href="#pricing">Candidate pricing &amp; margin</a></li>
-      <li><a href="#scenarios">Two scenarios — price the worse one</a></li>
+      <li><a href="#pricing">Pricing and margin</a></li>
+      <li><a href="#scenarios">Two scenarios, priced on the worse one</a></li>
     </ul>
   </div>
 
-  <h2 id="driver">The surprising cost driver: AI, not messaging</h2>
-  <p>The intuition is that messaging will dominate the bill. It doesn't — <strong>if</strong> we
-  keep replies inside WhatsApp's free 24-hour window (which is the natural flow of a conversation
-  anyway). With messaging mostly free, the dominant cost becomes <strong>AI inference</strong>, and
-  that swings enormously on one decision: which model does the routine work.</p>
+  <h2 id="driver">Where the cost actually goes</h2>
+  <p>You'd expect messaging to be the main cost. It isn't, as long as replies stay inside WhatsApp's
+  free 24-hour window — which is how a normal conversation runs anyway. With messaging mostly free,
+  the main cost is <strong>AI</strong>, and that varies a lot depending on one thing: which model does
+  the routine work.</p>
   <div class="stats">
     <div class="stat"><div class="n">~$0.15</div><div class="k">AI cost/worker/mo on a small, fast model</div></div>
     <div class="stat"><div class="n">~$2.50+</div><div class="k">AI cost/worker/mo on a top-tier model</div></div>
@@ -101,8 +100,8 @@
     discounted Batch API at half price.</p></div>
   </div>
 
-  <h2 id="pricing">Candidate pricing &amp; the margin story</h2>
-  <p>Against a cost of a few dollars per worker, the pricing has comfortable room:</p>
+  <h2 id="pricing">Pricing and margin</h2>
+  <p>Against a cost of a few dollars per worker, there's room in the pricing:</p>
   <div class="diagram">
     <pre class="mermaid">
 flowchart LR
@@ -112,7 +111,7 @@ flowchart LR
   classDef b fill:#e7f4ec,stroke:#2f7d4f,color:#1b2330;
     </pre>
     <p class="figcap">Figure 1 — Launch high to cover the fixed-cost floor at low volume, then step
-    the price down as scale drives unit cost toward ~$1.30/worker.</p>
+    the price down as scale drives unit cost towards ~$1.30/worker.</p>
   </div>
   <div class="stats">
     <div class="stat"><div class="n">$19–25</div><div class="k">launch price / worker / mo</div></div>
@@ -123,12 +122,12 @@ flowchart LR
   <p class="src">Source: <code>docs/research/00_synthesis.md</code> §8 and <code>docs/SCOPE.md</code>
   §8. A working target, not a committed price.</p>
 
-  <h2 id="scenarios">Two scenarios — and we price the worse one</h2>
-  <p>Messaging cost depends heavily on how a worker actually uses the channel. Two scenarios bracket
-  it, and the disciplined move is to set the price floor against the <strong>worse</strong> case:</p>
+  <h2 id="scenarios">Two scenarios, priced on the worse one</h2>
+  <p>Messaging cost depends a lot on how a worker uses the channel. Two scenarios bracket it, and the
+  sensible thing is to set the price floor against the <strong>worse</strong> case:</p>
   <div class="cards">
     <div class="card"><p class="k" style="color:var(--good)">Window-heavy</p><p>Conversation-led,
-    mostly inside the free window. Messaging cost ~<strong>$0.50/worker</strong>. The happy path.</p></div>
+    mostly inside the free window. Messaging cost ~<strong>$0.50/worker</strong>. The common case.</p>
     <div class="card"><p class="k" style="color:var(--warn)">Marketing-heavy</p><p>Lots of
     out-of-window re-engagement via paid templates. Messaging cost ~<strong>$5–15/worker</strong>.
     Price the floor here.</p></div>
@@ -176,7 +175,7 @@ flowchart LR
 
 <footer class="site">
   <div class="wrap">
-    <p><strong>WorkerApp</strong> — investor scoping site. Cost and pricing figures trace to
+    <p><strong>WorkerChat</strong> — investor scoping site. Cost and pricing figures trace to
     <code>docs/research/00_synthesis.md</code> §8 and <code>docs/SCOPE.md</code> §8. AI pricing
     (cache 2026-05-26) and Meta per-country rates must be re-verified before committing the model.</p>
   </div>
@@ -186,11 +185,13 @@ flowchart LR
 <script>
   mermaid.initialize({
     startOnLoad: true,
-    theme: "base",
+    theme: "dark",
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
-      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
-      lineColor: "#4a5568", fontSize: "14px"
+      background: "#1a2230",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#5fb0d0", primaryTextColor: "#1b2330",
+      secondaryColor: "#222c3a", tertiaryColor: "#222c3a",
+      lineColor: "#aab6c4", textColor: "#e6ebf2", fontSize: "14px"
     },
     flowchart: { curve: "basis", useMaxWidth: true }
   });

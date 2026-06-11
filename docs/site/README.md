@@ -1,6 +1,6 @@
-# WorkerApp — Investor Scoping Site (Track C)
+# WorkerChat — Investor Scoping Site (Track C)
 
-A small set of **static, linked HTML pages** that explain the WorkerApp plan to a non-technical
+A small set of **static, linked HTML pages** that explain the WorkerChat plan to a non-technical
 investor, with deeper technical detail tucked into collapsible "Tech info" boxes for technical
 readers. No framework, no build step — open any `.html` file directly, or serve the folder.
 

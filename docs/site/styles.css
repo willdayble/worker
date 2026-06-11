@@ -7,26 +7,28 @@
    =========================================================================== */
 
 :root {
-  /* Neutral slate + a single trust-accent. Deliberately corporate/calm. */
-  --ink:        #1b2330;   /* body text */
-  --ink-soft:   #4a5568;   /* secondary text */
-  --ink-faint:  #717c8c;   /* captions, source notes */
-  --paper:      #ffffff;
-  --paper-2:    #f6f8fb;   /* page background */
-  --paper-3:    #eef2f7;   /* table stripe / box fill */
-  --line:       #d8e0ea;   /* hairlines */
-  --accent:     #2c6e8f;   /* primary accent (teal-slate) */
-  --accent-dk:  #1f4d64;
-  --accent-bg:  #e9f2f6;
-  --good:       #2f7d4f;   /* "official / durable" green */
-  --good-bg:    #e7f4ec;
-  --warn:       #b06a1a;   /* "friction / caution" amber */
-  --warn-bg:    #fbf1e3;
-  --bad:        #b23a3a;   /* "ban / existential risk" red */
-  --bad-bg:     #f8e9e9;
+  /* Dark theme: light text on a deep slate background. Accent + status colours
+     are the LIGHT/bright tones (used as text); every *-bg is a DARK tint (used
+     as fills behind light text). */
+  --ink:        #e6ebf2;   /* body text */
+  --ink-soft:   #aab6c4;   /* secondary text */
+  --ink-faint:  #7e8a99;   /* captions, source notes */
+  --paper:      #1a2230;   /* cards / surfaces */
+  --paper-2:    #11161f;   /* page background (darkest) */
+  --paper-3:    #232e3d;   /* table stripe / box fill (lighter than card) */
+  --line:       #2f3b4d;   /* hairlines */
+  --accent:     #5fb0d0;   /* primary accent (bright teal) */
+  --accent-dk:  #82c8e2;   /* lighter teal — links + summary text on dark */
+  --accent-bg:  #142c38;   /* dark teal tint (fill behind light teal text) */
+  --good:       #5cc285;   /* "official / durable" green (light) */
+  --good-bg:    #15301f;   /* dark green tint */
+  --warn:       #d9a24e;   /* "friction / caution" amber (light) */
+  --warn-bg:    #352712;   /* dark amber tint */
+  --bad:        #e0686a;   /* "ban / existential risk" red (light) */
+  --bad-bg:     #361a1c;   /* dark red tint */
   --radius:     10px;
   --maxw:       50rem;
-  --shadow:     0 1px 2px rgba(27,35,48,.05), 0 4px 18px rgba(27,35,48,.06);
+  --shadow:     0 1px 2px rgba(0,0,0,.25), 0 6px 20px rgba(0,0,0,.30);
 }
 
 * { box-sizing: border-box; }
@@ -50,7 +52,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(255,255,255,.92);
+  background: rgba(17,22,31,.85);
   backdrop-filter: saturate(140%) blur(8px);
   border-bottom: 1px solid var(--line);
 }
@@ -86,7 +88,7 @@ body {
   white-space: nowrap;
 }
 .nav-links a:hover { background: var(--paper-3); color: var(--ink); }
-.nav-links a.active { background: var(--accent); color: #fff; }
+.nav-links a.active { background: var(--accent); color: #0d1219; font-weight: 600; }
 
 /* ---------- Page layout ------------------------------------------------- */
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem 5rem; }
@@ -199,7 +201,7 @@ thead th {
   top: 0;
 }
 tbody tr:last-child td { border-bottom: none; }
-tbody tr:nth-child(even) td { background: #fbfcfe; }
+tbody tr:nth-child(even) td { background: #1e2734; }
 td.yes { color: var(--good); font-weight: 600; }
 td.no  { color: var(--bad);  font-weight: 600; }
 td.meh { color: var(--warn); font-weight: 600; }
@@ -242,7 +244,7 @@ details.tech > summary .tag {
   text-transform: uppercase;
   letter-spacing: .08em;
   background: var(--accent);
-  color: #fff;
+  color: #0d1219;
   border-radius: 4px;
   padding: .1rem .4rem;
   margin-left: auto;
@@ -284,7 +286,7 @@ details.tech > summary .tag {
 
 /* ASCII / pre fallback diagrams */
 pre.ascii {
-  background: var(--ink);
+  background: #0d1219;
   color: #d7e2ee;
   border-radius: var(--radius);
   padding: 1.1rem 1.2rem;
@@ -389,8 +391,11 @@ footer.site a { color: var(--ink-soft); }
 
 /* ---------- Print ------------------------------------------------------- */
 @media print {
+  /* Flip back to dark-on-white for paper. */
   .nav, .pager { display: none; }
-  body { background: #fff; font-size: 12px; }
+  body { background: #fff; color: #1b2330; font-size: 12px; }
+  h1, h2, h3, strong { color: #11161f; }
+  .card, .callout, .stat, .diagram, details.tech, table, .toc { background: #fff; }
   details.tech { break-inside: avoid; }
   details.tech[open] > summary::before { content: ""; }
 }
