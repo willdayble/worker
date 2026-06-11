@@ -116,3 +116,15 @@ export interface ContactPracticeRow {
   notes_enc: Ciphertext | null;
   created_at: Timestamptz;
 }
+
+// --- contact_flag_events (append-only dangerous-flag audit) -----------------
+export type FlagAction = 'flag' | 'unflag';
+
+export interface ContactFlagEventRow {
+  id: Uuid;
+  user_id: Uuid;
+  contact_id: Uuid;
+  action: FlagAction;
+  reason_enc: Ciphertext | null;
+  created_at: Timestamptz;
+}

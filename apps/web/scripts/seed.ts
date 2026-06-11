@@ -70,7 +70,16 @@ async function main() {
   // 4. contact + per-channel identity
   const contact = await supabase
     .from('contacts')
-    .insert({ user_id: uid, display_name: 'Alex Rivers', acquisition_source_id: acq.data?.id })
+    .insert({
+      user_id: uid,
+      display_name: 'Alex Rivers',
+      acquisition_source_id: acq.data?.id,
+      age_group: '25-35',
+      star_rating: 4,
+      deposit_paid: true,
+      deposit_amount: 100,
+      id_verified: true,
+    })
     .select('id')
     .single();
   const contactId = contact.data!.id as string;
@@ -81,6 +90,12 @@ async function main() {
     channel: CHANNEL,
     channel_user_id: CHANNEL_USER_ID,
     display_name: 'Alex Rivers',
+  });
+
+  await supabase.from('contact_notes').insert({
+    user_id: uid,
+    contact_id: contactId,
+    body_enc: await encryptForUser(uid, 'Polite, paid deposit promptly. Prefers Friday evenings.'),
   });
 
   // 5. messages (encrypted), oldest → newest
