@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { decryptForUser, safeDecrypt } from '@/lib/crypto';
-import { Composer } from '@/components/inbox/composer';
+import { ThreadAssist } from '@/components/inbox/thread-assist';
 import { cn } from '@/lib/utils';
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -116,7 +116,7 @@ export default async function ThreadPage({
         ))}
       </div>
 
-      <Composer conversationId={conversationId} />
+      <ThreadAssist conversationId={conversationId} />
     </div>
   );
 }

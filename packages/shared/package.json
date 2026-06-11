@@ -1,6 +1,6 @@
 {
   "name": "@workerchat/shared",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Track B platform contract: MessagingProvider interface, DB row types, zod validators, crypto helpers. Imported by apps/web (B) and apps/worker (A). NEVER depends on a provider chat SDK (CONTRACTS §1).",
   "type": "module",

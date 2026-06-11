@@ -17,5 +17,6 @@
 export * from './messaging/interface.js';
 export * from './db/types.js';
 export * from './db/crm.js';
+export * from './ai/analysis.js';
 export * from './validation/schemas.js';
 export * from './crypto/index.js';
