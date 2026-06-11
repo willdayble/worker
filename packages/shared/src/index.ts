@@ -4,7 +4,7 @@
 //   • messaging/  MessagingProvider interface + payload types (CONTRACTS §2)
 //   • db/         DB row types for the 1a channel contract  (CONTRACTS §3)
 //   • validation/ zod validators for the A⇄B wire contract  (CONTRACTS §2)
-//   • crypto/     encrypt/decrypt/json/HMAC free fns — THROWING STUBS until 0b (§5)
+//   • crypto/     encrypt/decrypt/json/HMAC free fns — libsodium impls, 0b (§5)
 //
 // apps/worker (Track A) imports the messaging interface/types + the crypto free
 // functions (its own Encryptor PORT adapts over them). The CRM imports types,
