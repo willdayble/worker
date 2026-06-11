@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerApp — Scaling</title>
+<meta name="description" content="How the two messaging paths behave at 10, 100, 10k and 100k workers — they break in completely different dimensions — plus the per-worker-number ceiling and the portfolio single-point-of-failure.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="infrastructure.html">Infrastructure</a>
+      <a href="app.html">The App</a>
+      <a href="chat.html">Chat Layer</a>
+      <a href="technical.html">Technical</a>
+      <a href="scaling.html" class="active">Scaling</a>
+      <a href="costs.html">Costs</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">Growth · 10 → 100 → 10k → 100k workers</p>
+  <h1>The two paths don't break the same way — and that's the whole point.</h1>
+  <p class="lede">When people ask "does it scale?", the honest answer is: it depends which path,
+  and the two fail in completely different places. The official path is slow and bureaucratic but
+  stable; the unofficial path is cheap to start but fragile the moment you have more than a few
+  hundred sessions. Knowing exactly where each one bends is what lets us plan around it.</p>
+</header>
+
+<main class="wrap">
+
+  <div class="toc">
+    <div class="further-h">On this page</div>
+    <ul>
+      <li><a href="#table">Both paths at four scales</a></li>
+      <li><a href="#ceiling">The per-worker-number ceiling</a></li>
+      <li><a href="#spof">The portfolio single-point-of-failure</a></li>
+      <li><a href="#net">Net: what we actually do</a></li>
+    </ul>
+  </div>
+
+  <h2 id="table">Both paths at four scales</h2>
+  <p>Read this table as two separate stories. The official column breaks on
+  <strong>number-provisioning and bureaucratic friction</strong>; the unofficial column breaks on
+  <strong>per-session compute and ban waves</strong>.</p>
+
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Workers</th>
+        <th>Official path <span class="pill good">stable, bureaucratic</span></th>
+        <th>Unofficial path <span class="pill bad">cheap, fragile</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>10</strong></td>
+        <td class="cell-good">Trivial. 1–2 shared numbers, lowest tier. Prefer official for
+        stability.</td>
+        <td class="cell-warn">Fits one small server (~10 sessions). Fine, but fragile.</td>
+      </tr>
+      <tr>
+        <td><strong>100</strong></td>
+        <td class="cell-good">Clear winner. Within the ~20-number cap if numbers are pooled; mid
+        tiers.</td>
+        <td class="cell-warn">100 dedicated sessions already exceed a safe single-server ceiling;
+        100 cold numbers raise ban-wave odds.</td>
+      </tr>
+      <tr>
+        <td><strong>10k</strong></td>
+        <td class="cell-warn"><strong>Do not</strong> use one number per worker — that blows past the
+        cap by orders of magnitude. Pool shared numbers across multiple business accounts; climb
+        tiers; upgrade throughput.</td>
+        <td class="cell-bad">~20+ servers, sharded and sticky-routed; <strong>guaranteed rolling ban
+        waves.</strong> Not recommended for production.</td>
+      </tr>
+      <tr>
+        <td><strong>100k</strong></td>
+        <td class="cell-warn">Realistic only via multiple business accounts / messaging partners, the
+        unlimited tier, top throughput, and an async webhook queue.</td>
+        <td class="cell-bad"><strong>Infeasible.</strong> Hundreds of servers, continuous
+        re-registration of banned numbers, unbounded cascade.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="src">Source: <code>docs/research/00_synthesis.md</code> §7. The shapes matter more than
+  the exact thresholds, which are medium-confidence and platform-dependent.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  subgraph OFF["Official — breaks on bureaucracy"]
+    O1["10<br/>trivial"]:::ok --> O2["100<br/>clear winner"]:::ok --> O3["10k<br/>must pool numbers"]:::warn --> O4["100k<br/>multi-account + partners"]:::warn
+  end
+  subgraph UN["Unofficial — breaks on compute + bans"]
+    U1["10<br/>fits one box"]:::warn --> U2["100<br/>strains one box"]:::warn --> U3["10k<br/>rolling ban waves"]:::bad --> U4["100k<br/>infeasible"]:::bad
+  end
+  classDef ok fill:#e7f4ec,stroke:#2f7d4f,color:#1b2330;
+  classDef warn fill:#fbf1e3,stroke:#b06a1a,color:#1b2330;
+  classDef bad fill:#f8e9e9,stroke:#b23a3a,color:#1b2330;
+    </pre>
+    <p class="figcap">Figure 1 — Two different failure curves. Official degrades gracefully into
+    "more bureaucracy"; unofficial falls off a cliff at scale.</p>
+  </div>
+
+  <h2 id="ceiling">The per-worker-number ceiling</h2>
+  <p>The most important structural fact for the business model: <strong>you cannot give every worker
+  their own dedicated number at scale.</strong> A business portfolio is capped at roughly 20 numbers
+  by default. So a naive "one number per worker" design hits a wall in the low tens of workers — and
+  the answer is a <strong>shared/pooled-number architecture</strong>, planned for from the start
+  rather than discovered in a panic at 50 users.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">~2</div><div class="k">numbers per portfolio at first</div></div>
+    <div class="stat"><div class="n">~20</div><div class="k">numbers per portfolio by default</div></div>
+    <div class="stat"><div class="n">80→1000</div><div class="k">messages/sec, lowest to top tier</div></div>
+    <div class="stat"><div class="n">20</div><div class="k">msg/sec throughput in Coexistence mode</div></div>
+  </div>
+  <p class="src">Source: <code>docs/research/00_synthesis.md</code> §3a, §7. Number caps and
+  throughput are Meta-set and revised periodically; re-verify before scaling.</p>
+
+  <h2 id="spof">The portfolio single-point-of-failure</h2>
+  <p>Since October 2025, the official platform enforces quality and limits at the <strong>business
+  portfolio level</strong>: numbers grouped together share a fate. One number behaving badly can drag
+  down — or block from scaling — every number in the same portfolio. This is a documented, real
+  single-point-of-failure, and the response is architectural: <strong>isolate portfolios</strong> so
+  a problem in one can't cascade across the whole user base.</p>
+  <div class="callout warn">
+    <span class="label">The honest version of "cascade ban"</span>
+    <p>The dramatic "one ban chain-bans everyone" story is, for the unofficial path, mostly
+    unproven vendor speculation. The <em>real</em> cascade risks are two undramatic ones: a fleet
+    sharing one library fingerprint getting caught in a single detection wave, and this documented
+    portfolio-pooling on the official side. We design for both rather than for the myth.</p>
+  </div>
+
+  <h2 id="net">Net: what we actually do</h2>
+  <div class="cards">
+    <div class="card"><p class="k">Pool, don't dedicate</p><p>Shared numbers across multiple business
+    accounts from early on — never one number per worker at scale.</p></div>
+    <div class="card"><p class="k">Isolate portfolios</p><p>Partition numbers so a bad actor or a
+    quality dip can't sink the whole base.</p></div>
+    <div class="card"><p class="k">Two channels</p><p>Telegram in parallel means a WhatsApp
+    constraint is a degradation, not an outage. See <a href="chat.html">Chat Layer</a>.</p></div>
+    <div class="card"><p class="k">Official as the spine</p><p>The unofficial path is fallback-only;
+    nothing the business depends on scales on it.</p></div>
+  </div>
+
+  <details class="tech">
+    <summary>Tech info: the scaling mechanics <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <ul>
+        <li><strong>Tiers</strong> ramp 250 → 1K → 10K → 100K → unlimited unique business-initiated
+        conversations per rolling 24h, <strong>pooled per portfolio</strong> (new numbers inherit
+        the portfolio's highest tier — no per-number warm-up).</li>
+        <li><strong>Throughput</strong> is 80 msg/sec per number (20 in Coexistence), rising to
+        1,000 msg/sec only at the unlimited tier with ≥100K uniques/24h and acceptable quality.</li>
+        <li><strong>At 100k workers</strong>, the only realistic official architecture is multiple
+        business accounts / messaging partners behind an async webhook queue (acknowledge in &lt;5s,
+        process downstream).</li>
+        <li><strong>Unofficial compute</strong>: lightweight sessions run ~500/server, browser-based
+        ones ~50/server with periodic restarts — and none of it survives the ban waves at scale.</li>
+      </ul>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://developers.facebook.com/docs/whatsapp/messaging-limits/" target="_blank" rel="noopener">Meta — messaging limits &amp; tiers</a></li>
+          <li><a href="https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/phone-numbers" target="_blank" rel="noopener">Meta — business phone-number limits</a></li>
+          <li><a href="https://www.wuseller.com/blog/portfolio-wide-whatsapp-messaging-limits/" target="_blank" rel="noopener">Portfolio-wide messaging limits (Oct 2025 change)</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <div class="pager">
+    <a href="technical.html"><small>Back</small>← Technical</a>
+    <a class="nxt" href="costs.html"><small>Next</small>Costs →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerApp</strong> — investor scoping site. Scaling figures trace to
+    <code>docs/research/00_synthesis.md</code> §7. Number caps, tiers and throughput are Meta-set and
+    revised periodically — re-verify before scaling.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
+      lineColor: "#4a5568", fontSize: "14px"
+    },
+    flowchart: { curve: "basis", useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# WorkerApp investor scoping site — intentionally unlisted.
+# This is private investor material; please do not index or crawl.
+User-agent: *
+Disallow: /

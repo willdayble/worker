@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerApp — Technical, APIs &amp; Constraints</title>
+<meta name="description" content="The stack, the MessagingProvider abstraction that makes channels swappable, the hard platform constraints, and the day-one security guardrails.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="infrastructure.html">Infrastructure</a>
+      <a href="app.html">The App</a>
+      <a href="chat.html">Chat Layer</a>
+      <a href="technical.html" class="active">Technical</a>
+      <a href="scaling.html">Scaling</a>
+      <a href="costs.html">Costs</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">For the technical reader · Stack &amp; constraints</p>
+  <h1>How it's built, and the walls it's built around.</h1>
+  <p class="lede">This page is denser by design — it's for the technical diligence reader. The
+  headline: a small, boring, proven stack; one abstraction that makes the messaging channel
+  swappable; a clear-eyed list of the platform constraints we can't engineer away; and security
+  guardrails switched on from the first commit.</p>
+</header>
+
+<main class="wrap">
+
+  <div class="toc">
+    <div class="further-h">On this page</div>
+    <ul>
+      <li><a href="#stack">The stack</a></li>
+      <li><a href="#provider">The MessagingProvider abstraction</a></li>
+      <li><a href="#decouple">Why the session can't be serverless</a></li>
+      <li><a href="#constraints">Hard platform constraints</a></li>
+      <li><a href="#security">Day-one security guardrails</a></li>
+      <li><a href="#docs">API &amp; reference docs</a></li>
+    </ul>
+  </div>
+
+  <h2 id="stack">The stack</h2>
+  <p>A pragmatic monorepo for a small team driving AI tooling. Nothing exotic — every piece is
+  chosen because it's well-trodden and the failure modes are known.</p>
+  <div class="cards">
+    <div class="card"><p class="k">apps/web</p><p>Next.js + TypeScript on Vercel. The CRM UI, the
+    AI assist, the connect screens. <strong>Never imports a chat SDK.</strong></p></div>
+    <div class="card"><p class="k">apps/worker</p><p>An always-on Node service (Fly.io / Railway)
+    with a Redis-backed job queue. Holds the live messaging sessions. The only code that touches a
+    provider.</p></div>
+    <div class="card"><p class="k">packages/shared</p><p>Types, database schema, validation, crypto,
+    and the channel interface. No provider SDKs live here.</p></div>
+    <div class="card"><p class="k">Data</p><p>Supabase Postgres + Row-Level Security + Auth.
+    Transaction-pooled for the web app; a direct connection for the always-on worker.</p></div>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  CL["Client on WhatsApp / Telegram"]
+  CL <--> W
+  subgraph W["apps/worker — always-on Node (NOT serverless)"]
+    MP["MessagingProvider interface"]
+    A1["WhatsAppOfficial (Coexistence)"]
+    A2["WhatsAppUnofficial (fallback)"]
+    A3["Telegram"]
+    MP --- A1
+    MP --- A2
+    MP --- A3
+  end
+  W -->|"inbound events<br/>(encrypted)"| DB
+  WEB -->|"outbound queue<br/>(human-approved)"| DB
+  DB --> W
+  subgraph WEB["apps/web — Next.js on Vercel"]
+    UI["Inbox · pipeline · AI assist · connect screens"]
+  end
+  DB[("Supabase Postgres + RLS<br/>ciphertext at rest")]
+  DB <--> WEB
+  classDef wk fill:#e9f2f6,stroke:#2c6e8f,color:#1b2330;
+  classDef web fill:#eef2f7,stroke:#4a5568,color:#1b2330;
+  class MP,A1,A2,A3 wk; class UI web;
+    </pre>
+    <p class="figcap">Figure 1 — The web app and the worker share only the database (and a queue
+    inside it). The CRM never calls the worker's process directly; it enqueues, and the worker
+    consumes.</p>
+  </div>
+
+  <h2 id="provider">The MessagingProvider abstraction</h2>
+  <p>This one interface is what makes "lose a channel, not your business" true in code. WhatsApp
+  (official), WhatsApp (unofficial fallback) and Telegram are three <strong>implementations of a
+  single interface</strong>. The CRM only ever sees the interface — it never knows or cares which
+  channel a message rode in on. Adding Signal later means writing one more implementation, not
+  touching the CRM.</p>
+
+  <details class="tech">
+    <summary>Tech info: the interface and the capability-driven UI <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Every provider exposes the same shape: <code>connect()</code>, <code>getStatus()</code>,
+      <code>send()</code>, <code>syncHistory()</code>, <code>disconnect()</code>, and an
+      <code>onInbound()</code> handler — plus a <strong>capabilities</strong> object the UI reads to
+      render itself correctly without channel-specific branching:</p>
+      <ul>
+        <li><code>connectMethod</code> (<code>qr</code> / <code>pair_code</code> /
+        <code>bot_token</code>) picks the right connect screen.</li>
+        <li><code>requires24hWindow</code> shows or hides the "window closing — template only"
+        banner.</li>
+        <li><code>historySyncDays</code> / <code>historySyncMode</code> drive the "syncing
+        history…" state.</li>
+        <li><code>readReceipts</code>, <code>groups</code>, etc. hide UI a channel doesn't support.</li>
+      </ul>
+      <p>Inbound messages are normalised into one shape, encrypted, then upserted idempotently by
+      <code>(conversation, provider_message_id)</code> — so a backfill and a live message can never
+      duplicate. Ordering is always by the provider's send time, never insert time. Outbound is
+      <strong>claim-then-send with an idempotency key</strong>, consumed only from human-approved
+      rows, so a worker restart can't double-send.</p>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://developers.facebook.com/docs/whatsapp/messaging-limits/" target="_blank" rel="noopener">Meta — WhatsApp messaging limits</a></li>
+          <li><a href="https://core.telegram.org/bots/api" target="_blank" rel="noopener">Telegram — Bot API reference</a></li>
+          <li><a href="https://github.com/WhiskeySockets/Baileys" target="_blank" rel="noopener">Baileys — unofficial WhatsApp library (fallback adapter)</a></li>
+          <li><a href="https://fly.io/docs/blueprints/work-queues/" target="_blank" rel="noopener">Fly.io — always-on work-queue blueprint</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="decouple">Why the messaging session can't be serverless</h2>
+  <p>A WhatsApp or Telegram session is a <strong>persistent, always-open connection</strong> that
+  must stay alive 24/7 — even while the worker's phone is off. Serverless platforms (like Vercel
+  Functions) cap function runtime at a few minutes and explicitly can't act as a long-lived
+  connection server. So the session layer lives in a dedicated, always-on process; the CRM stays
+  serverless and talks to it only through the database. This split isn't a preference — it's a
+  hard technical boundary, and it's why hosting the worker is a real (paid) line item.</p>
+  <div class="callout warn">
+    <span class="label">A subtle but fatal gotcha</span>
+    <p>Free database projects <strong>pause after about 7 days idle</strong> — fatal for an
+    always-needed messaging session. The worker and its Redis must be on <strong>paid, always-on</strong>
+    hosting from day one. Budgeted for; see <a href="costs.html">Costs</a>.</p>
+  </div>
+
+  <h2 id="constraints">Hard platform constraints we can't engineer away</h2>
+  <p>Honesty about limits is part of the diligence. These are walls, not bugs:</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Constraint</th><th>What it means</th><th>How we live with it</th></tr></thead>
+    <tbody>
+      <tr><td><strong>24-hour window</strong></td>
+        <td>Free-form messages only within 24h of a client's last message; otherwise approved
+        templates only.</td>
+        <td>UI surfaces window state; keep replies inside the free window; templates for
+        re-engagement.</td></tr>
+      <tr><td><strong>History caps (Coexistence)</strong></td>
+        <td>~180 days text, ~14 days media, no groups sync into the API.</td>
+        <td>Full history stays on-device with the worker; the CRM uses a recent window.</td></tr>
+      <tr><td><strong>Regional availability</strong></td>
+        <td>Coexistence is unavailable in many regions (EU/UK/AU/JP/KR commonly) and the list
+        shifts.</td>
+        <td>Verify per user country; fall back to Telegram or scoped unofficial where unavailable.</td></tr>
+      <tr><td><strong>Per-portfolio number cap</strong></td>
+        <td>~2 numbers initially, ~20 by default per business portfolio.</td>
+        <td>Don't design one-number-per-worker at scale; pool shared numbers. See
+        <a href="scaling.html">Scaling</a>.</td></tr>
+      <tr><td><strong>Portfolio-level enforcement</strong></td>
+        <td>Numbers grouped together share quality &amp; limits (since Oct 2025) — one bad number can
+        block the group.</td>
+        <td>Isolate portfolios; treat it as a real single-point-of-failure.</td></tr>
+      <tr><td><strong>No groups, presence leaks</strong></td>
+        <td>Group chats unsupported on the API; read receipts / typing can reveal automation timing.</td>
+        <td>Hide unsupported features via capabilities; keep human-paced behaviour.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="src">Source: <code>docs/research/00_synthesis.md</code> §3, §11; <code>docs/CONTRACTS.md</code>
+  §2. All platform numbers are medium-confidence and revised by Meta periodically — re-verify before
+  any launch.</p>
+
+  <h2 id="security">Day-one security guardrails</h2>
+  <p>Security here isn't a phase — it's switched on from the first commit, because the data is too
+  sensitive for "we'll harden it later."</p>
+  <div class="cards">
+    <div class="card"><p class="k">Secrets</p><p>Gitignored env files, a secrets manager, and an
+    <strong>explicit deny-rule</strong> so the AI coding tool itself can't read <code>.env</code> —
+    a gitignore alone does <em>not</em> stop that.</p></div>
+    <div class="card"><p class="k">Leak detection</p><p><code>gitleaks</code> as both a pre-commit
+    hook and a CI job — the final net against a committed secret.</p></div>
+    <div class="card"><p class="k">RLS everywhere</p><p>Row-Level Security on every table,
+    deny-by-default. The build <strong>fails</strong> if any policy is a blanket allow-all.</p></div>
+    <div class="card"><p class="k">No plaintext in logs</p><p>Message bodies, previews and raw
+    payloads are redacted before logging; structured logs carry only ids, timestamps and counts.</p></div>
+    <div class="card"><p class="k">Pinned dependencies</p><p>Provider libraries are version-pinned
+    and lockfiles audited — direct response to the Dec 2025 poisoned-fork incident.</p></div>
+    <div class="card"><p class="k">Real endpoint auth</p><p>Bridge endpoints authenticated by the
+    user's verified token; any service secret compared in constant time. No static shared secrets
+    doubling as authorization.</p></div>
+  </div>
+
+  <details class="tech">
+    <summary>Tech info: the guardrails in specifics <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <ul>
+        <li><strong>Claude Code deny rules</strong> — <code>.claude/settings.json</code> denies
+        <code>Read(./.env)</code>, <code>Read(./.env.*)</code>, <code>Read(./secrets/**)</code>.
+        Confirmed (The Register, Jan 2026) that <code>.gitignore</code>/<code>.claudeignore</code>
+        do <em>not</em> stop the tool reading <code>.env</code> — only the deny rule does.</li>
+        <li><strong>RLS CI gate</strong> — the pipeline greps migrations and fails on
+        <code>WITH CHECK (true)</code> or <code>USING (true)</code>. Every policy constrains to the
+        row's owner; <code>service_role</code> is worker-only, never in the browser.</li>
+        <li><strong>Encryption</strong> — libsodium XChaCha20-Poly1305, per-user DEK via envelope
+        encryption, key material in a KMS loaded only during a live session. See
+        <a href="infrastructure.html">Infrastructure</a> for the honest threat model.</li>
+        <li><strong>CI on every PR</strong> — eslint, <code>tsc --noEmit</code>, tests, gitleaks,
+        and the RLS grep.</li>
+      </ul>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://www.theregister.com/2026/01/28/claude_code_ai_secrets_files/" target="_blank" rel="noopener">The Register — AI coding tools reading secret files (Jan 2026)</a></li>
+          <li><a href="https://code.claude.com/docs/en/settings" target="_blank" rel="noopener">Claude Code — settings &amp; permission deny rules</a></li>
+          <li><a href="https://github.com/gitleaks/gitleaks" target="_blank" rel="noopener">gitleaks — secret scanning</a></li>
+          <li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener">Supabase — Row-Level Security</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="docs">API &amp; reference docs</h2>
+  <p>The primary external references this plan builds on:</p>
+  <div class="further" style="border-top:none;padding-top:0">
+    <ul>
+      <li><a href="https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing" target="_blank" rel="noopener">Meta — WhatsApp Cloud API pricing</a></li>
+      <li><a href="https://developers.facebook.com/docs/whatsapp/messaging-limits/" target="_blank" rel="noopener">Meta — messaging limits &amp; tiers</a></li>
+      <li><a href="https://business.whatsapp.com/policy" target="_blank" rel="noopener">WhatsApp — Business Messaging Policy</a></li>
+      <li><a href="https://core.telegram.org/bots/api" target="_blank" rel="noopener">Telegram — Bot API</a></li>
+      <li><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener">Claude — structured outputs</a></li>
+      <li><a href="https://platform.claude.com/docs/en/pricing" target="_blank" rel="noopener">Claude — API pricing (re-verify before committing)</a></li>
+      <li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener">Supabase — Row-Level Security</a></li>
+      <li><a href="https://doc.libsodium.org/" target="_blank" rel="noopener">libsodium — the crypto library</a></li>
+    </ul>
+  </div>
+
+  <div class="pager">
+    <a href="app.html"><small>Back</small>← The App</a>
+    <a class="nxt" href="scaling.html"><small>Next</small>Scaling →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerApp</strong> — investor scoping site. Stack and constraints trace to
+    <code>docs/research/00_synthesis.md</code> §3, §9 and <code>docs/CONTRACTS.md</code>. Platform
+    limits are medium-confidence and must be re-verified before launch.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
+      lineColor: "#4a5568", fontSize: "14px"
+    },
+    flowchart: { curve: "basis", useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

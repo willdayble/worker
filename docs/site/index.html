@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerApp — Overview</title>
+<meta name="description" content="A neutral, privacy-first CRM and client-messaging tool for independent service providers. What it is, and the one decision that makes it viable.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="active">Overview</a>
+      <a href="infrastructure.html">Infrastructure</a>
+      <a href="app.html">The App</a>
+      <a href="chat.html">Chat Layer</a>
+      <a href="technical.html">Technical</a>
+      <a href="scaling.html">Scaling</a>
+      <a href="costs.html">Costs</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">Investor scoping · Overview</p>
+  <h1>A safe place for independent workers to keep their clients — even if a platform bans them.</h1>
+  <p class="lede">WorkerApp is a neutral, privacy-first CRM and messaging tool for independent
+  service providers. They connect WhatsApp (or Telegram), their recent chats flow into a simple
+  inbox, and they turn enquiries into bookings faster and more safely — while their client list,
+  safety flags, and booking history live somewhere a platform ban can never reach.</p>
+</header>
+
+<main class="wrap">
+
+  <div class="toc">
+    <div class="further-h">On this page</div>
+    <ul>
+      <li><a href="#what">What it is, in one minute</a></li>
+      <li><a href="#win">The win condition</a></li>
+      <li><a href="#reframe">The honest reframe</a></li>
+      <li><a href="#layers">The three-layer mental model</a></li>
+      <li><a href="#moat">Why this is a moat</a></li>
+      <li><a href="#read">How to read this site</a></li>
+    </ul>
+  </div>
+
+  <h2 id="what">What it is, in one minute</h2>
+  <p>An independent worker already runs their whole business out of a messaging app. New client
+  messages, asks a few questions, agrees a time, writes it down somewhere, remembers who was
+  trouble last time. It works until the messages pile up — and it falls apart completely the day
+  their phone number gets shut off.</p>
+
+  <p>WorkerApp sits beside that messaging app, not on top of it. The worker connects their channel
+  once. Their recent conversations appear in a clean inbox with a contact list, a simple
+  pipeline (enquiry → screening → confirmed → done), and a place to record what each booking was
+  worth and how it ended. A clearly-labelled AI assistant drafts replies and spots bookings — but
+  <strong>the worker approves every message; nothing is ever sent or blocked automatically.</strong>
+  The client on the other end keeps chatting exactly as before and notices nothing.</p>
+
+  <div class="cards">
+    <div class="card">
+      <p class="k">No payments — ever</p>
+      <p>WorkerApp never touches money. That single decision removes the entire risk of being cut
+      off by Stripe, Visa, or Mastercard, the fastest way these tools die.</p>
+    </div>
+    <div class="card">
+      <p class="k">Ban-proof records</p>
+      <p>The client list, safety flags, and bookings are stored separately from the messaging
+      session. Lose a number, and you lose a <em>channel</em> — not your business.</p>
+    </div>
+    <div class="card">
+      <p class="k">Privacy by design</p>
+      <p>Sensitive data is encrypted at rest. Workers are told plainly what we can and can't see
+      today — and where we're heading. (We don't over-claim. See <a href="infrastructure.html">Infrastructure</a>.)</p>
+    </div>
+  </div>
+
+  <h2 id="win">The win condition</h2>
+  <p>We will know this works when a real worker can do four things through WorkerApp, with real
+  clients:</p>
+  <ol>
+    <li><strong>Book faster.</strong> Turn an incoming message into a confirmed appointment without
+    leaving the app.</li>
+    <li><strong>Prune time-wasters.</strong> Spot and close out enquiries that will never convert,
+    so attention goes to the ones that will.</li>
+    <li><strong>Stay safer.</strong> Flag a client as dangerous — and have that flag survive, with
+    the worker, no matter what happens to the phone number.</li>
+    <li><strong>Know where clients come from.</strong> See which advert or page a new client found
+    them through, recorded once and for good.</li>
+  </ol>
+  <p class="src">Success criteria mirror <code>docs/SCOPE.md</code> §5. The prototype is judged on
+  whether a test worker — plus a handful of others — can run a real booking loop end-to-end and a
+  cross-user view surfaces insight (sources, conversion, time-to-book).</p>
+
+  <h2 id="reframe">The honest reframe</h2>
+  <p>The original idea bundled three promises that sound reasonable together but, on close
+  inspection, <strong>cannot all be true at once</strong>: import a worker's <em>entire</em>
+  message history, look exactly like an ordinary personal account, and never get banned. Careful
+  research showed that any one of those forces you to give up another.</p>
+
+  <p>So we kept the <em>goals</em> — faster and safer bookings, less wasted time, the worker owning
+  their own data — and dropped the impossible parts. That's not a retreat. It's what makes the
+  product real, and it's a <strong>stronger</strong> story for an investor, because the constraints
+  become the moat.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  subgraph OLD["Original promise — ~5-15% durable"]
+    A1["Import the worker's<br/>ENTIRE history"]
+    A2["Look like an ordinary<br/>personal account"]
+    A3["Never get banned"]
+  end
+  OLD -->|"research falsified<br/>all three together"| NEW
+  subgraph NEW["Reframe — genuinely viable"]
+    B1["History stays on the<br/>worker's phone;<br/>~6 months syncs in"]
+    B2["A business account on<br/>the SAME number,<br/>SAME chat thread"]
+    B3["Use the sanctioned<br/>path + a second channel<br/>so one ban isn't fatal"]
+  end
+  classDef old fill:#f8e9e9,stroke:#b23a3a,color:#1b2330;
+  classDef new fill:#e7f4ec,stroke:#2f7d4f,color:#1b2330;
+  class A1,A2,A3 old;
+  class B1,B2,B3 new;
+    </pre>
+    <p class="figcap">Figure 1 — Three impossible-together promises become three workable ones.
+    Detail and the trade-off table are on the <a href="chat.html">Chat Layer</a> page.</p>
+  </div>
+
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Original assumption</th><th>What research found</th><th>The locked reframe</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Import the worker's <strong>entire</strong> chat history into the CRM</td>
+        <td>Impossible on the safe path (it caps at roughly the last 6 months of texts, ~2 weeks of
+        media, no group chats). Only the ban-prone path can read a full history.</td>
+        <td class="cell-good">History <strong>stays on the worker's device</strong>; the CRM syncs
+        about 6 months (or everything from connection onward). The worker confirmed this is fine.</td>
+      </tr>
+      <tr>
+        <td>Appear as a <strong>normal personal</strong> account</td>
+        <td>The official path makes it a <em>Business</em> account; a personal app can't share the
+        number. Only the unofficial path looks "normal" — and it forfeits ban-avoidance.</td>
+        <td class="cell-good">Accept "<strong>Business account, same number, same thread</strong>"
+        as native-enough. The worker keeps using their own phone.</td>
+      </tr>
+      <tr>
+        <td><strong>Avoid bans</strong> while doing both of the above</td>
+        <td>Incompatible with the first two on any single path — and the platform bans this kind of
+        work outright by policy, regardless of technique.</td>
+        <td class="cell-good"><strong>Neutral tooling</strong> + the official path where available
+        + <strong>Telegram as a sanctioned second channel</strong>, so one ban is never fatal.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="src">Source: <code>docs/SCOPE.md</code> §1–2, drawn from
+  <code>docs/research/00_synthesis.md</code> §1–2. "5–15% durable" is the research's honest odds
+  for the premise <em>exactly as originally written</em>.</p>
+
+  <h2 id="layers">The three-layer mental model</h2>
+  <p>The whole system is three layers. The trick that makes it durable is that they're
+  <strong>loosely coupled</strong> — each can survive damage to the others.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  C["The client<br/>(chats on WhatsApp / Telegram —<br/>their experience never changes)"]
+  C <--> CHAT
+  subgraph CHAT["1 · The Chat Layer"]
+    direction LR
+    CH["Holds the live connection to WhatsApp / Telegram.<br/>Swappable: if one channel is banned, switch to another."]
+  end
+  CHAT --> APP
+  subgraph APP["2 · The App Layer (CRM)"]
+    direction LR
+    AP["Inbox, contacts, pipeline, bookings, safety flags,<br/>where-they-came-from, the disclosed AI assistant."]
+  end
+  APP --> INFRA
+  subgraph INFRA["3 · The Infrastructure Layer"]
+    direction LR
+    IN["Encrypted storage that belongs to the worker.<br/>A platform ban can't touch it."]
+  end
+  classDef l1 fill:#e9f2f6,stroke:#2c6e8f,color:#1b2330;
+  classDef l2 fill:#eef2f7,stroke:#4a5568,color:#1b2330;
+  classDef l3 fill:#e7f4ec,stroke:#2f7d4f,color:#1b2330;
+  class CH l1; class AP l2; class IN l3;
+    </pre>
+    <p class="figcap">Figure 2 — Three layers, deliberately decoupled. The key property: the CRM
+    (layer 2) and the worker's data (layer 3) do not depend on any single messaging session
+    (layer 1).</p>
+  </div>
+
+  <div class="callout key">
+    <span class="label">The one idea to take away</span>
+    <p>The records are independent of the channel. <strong>If a WhatsApp number is banned, the
+    worker loses a way of talking to clients — not their client list, their dangerous-client
+    flags, or their booking history.</strong> The channel is swappable behind a single internal
+    interface (WhatsApp → Telegram → Signal later). That decoupling is the product.</p>
+  </div>
+
+  <p>We also deliberately <strong>invert the usual build order</strong>. Instead of building the
+  shared infrastructure first, we de-risk the fragile thing first: prove the chat layer can
+  survive, then build the CRM, and build shared infrastructure last (or never). Building a big
+  shared database before you have users is the worst possible first move here — it's the biggest
+  thing to breach and answers none of the questions that actually kill the company.</p>
+
+  <h2 id="moat">Why the constraints are the moat</h2>
+  <div class="cards">
+    <div class="card">
+      <p class="k">Compliance</p>
+      <p>Neutral, general-purpose framing and a hard "no payments" rule keep WorkerApp on the safe
+      side of the laws that sink competitors. Hard to copy without rebuilding from the ground up.</p>
+    </div>
+    <div class="card">
+      <p class="k">Safety</p>
+      <p>Dangerous-client flags that survive a ban, advisory (never automated) risk-flagging, and a
+      human in the loop on every action. This is a duty-of-care product, and that shows.</p>
+    </div>
+    <div class="card">
+      <p class="k">Data sovereignty</p>
+      <p>The worker's records belong to the worker, encrypted, and decoupled from any platform.
+      A real answer to "what happens when the platform turns on you?"</p>
+    </div>
+  </div>
+
+  <details class="tech">
+    <summary>Tech info: the operating decisions behind the framing <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Three locked decisions do most of the legal and operational work:</p>
+      <ul>
+        <li><strong>Neutral product framing.</strong> WorkerApp never advertises specific services,
+        brokers a transaction, or takes a per-booking cut. Those facts are what establish "knowing
+        facilitation" in law; avoiding them keeps the tool on the safe side of decisions like
+        <em>Woodhull&nbsp;v.&nbsp;US</em>.</li>
+        <li><strong>No payment flow, ever.</strong> Removes payment-processor and card-network
+        deplatforming exposure in a single decision.</li>
+        <li><strong>Decoupled data.</strong> The CRM tables (contacts, deals, tags, flags) carry no
+        dependency on a live messaging session; a banned channel is swapped behind a
+        <code>MessagingProvider</code> interface. See the <a href="technical.html">Technical</a> page.</li>
+      </ul>
+      <p>Encryption is described honestly throughout this site: <strong>encryption-at-rest today</strong>
+      (defeats stolen-disk/backup theft), with <strong>true zero-knowledge / client-side
+      end-to-end encryption on the roadmap</strong>. We do not claim "we can't read your data" —
+      because while a session is live, technically we can. See
+      <a href="infrastructure.html">Infrastructure</a> for the honest threat model.</p>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://en.wikipedia.org/wiki/FOSTA-SESTA" target="_blank" rel="noopener">FOSTA-SESTA overview (the facilitation hinge)</a></li>
+          <li><a href="https://gdpr-info.eu/art-9-gdpr/" target="_blank" rel="noopener">GDPR Article 9 — special-category data</a></li>
+          <li><a href="https://www.paymentsjournal.com/onlyfans-now-reversed-ban-underscores-bankings-influence-on-adult-content/" target="_blank" rel="noopener">Why payment-processor risk is existential (OnlyFans, 2021)</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="read">How to read this site</h2>
+  <p>Each page stands alone, but they build on each other. The body text is written for a
+  non-technical reader; every <strong>"Tech info"</strong> box can be expanded for the detail
+  underneath, and ends with links to source documentation.</p>
+  <div class="cards">
+    <div class="card"><p class="k">Start here</p><p><a href="chat.html">Chat Layer</a> — the
+    centerpiece. The official-vs-unofficial trade-off, Telegram, and the make-or-break ban test.</p></div>
+    <div class="card"><p class="k">The product</p><p><a href="app.html">The App</a> and
+    <a href="infrastructure.html">Infrastructure</a> — what the worker uses, and where their data lives.</p></div>
+    <div class="card"><p class="k">The numbers</p><p><a href="scaling.html">Scaling</a> and
+    <a href="costs.html">Costs</a> — how it behaves at 10, 100, 10k, 100k workers, and the price.</p></div>
+  </div>
+
+  <p class="src">Every figure on this site is traceable to <code>docs/research/</code>. Where a
+  number needs re-checking before launch (platform pricing, regional availability, AI pricing),
+  the page says so explicitly.</p>
+
+  <div class="pager">
+    <span></span>
+    <a class="nxt" href="chat.html"><small>Next — the centerpiece</small>The Chat Layer →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerApp</strong> — investor scoping site · neutral privacy-first tooling for
+    independent service providers. Figures sourced from <code>docs/research/</code>;
+    planning document, not a launch commitment. Encryption claims are deliberately conservative
+    (at-rest today; zero-knowledge is roadmap).</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
+      lineColor: "#4a5568", fontSize: "14px"
+    },
+    flowchart: { curve: "basis", useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

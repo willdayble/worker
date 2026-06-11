@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerApp — The Chat Layer</title>
+<meta name="description" content="The heart of the plan: official vs unofficial WhatsApp, honestly; Telegram as a sanctioned second channel; ban mechanics; and the two-week test that decides everything.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="infrastructure.html">Infrastructure</a>
+      <a href="app.html">The App</a>
+      <a href="chat.html" class="active">Chat Layer</a>
+      <a href="technical.html">Technical</a>
+      <a href="scaling.html">Scaling</a>
+      <a href="costs.html">Costs</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">The centerpiece · How messages actually flow</p>
+  <h1>The chat layer is where this product lives or dies.</h1>
+  <p class="lede">Everything else — the CRM, the AI, the pretty dashboards — is well-understood and
+  buildable. The hard, unknowable part is whether a worker can keep talking to clients on WhatsApp
+  without losing the account. This page is honest about that, and explains the test that settles it
+  in two weeks for under $100.</p>
+</header>
+
+<main class="wrap">
+
+  <div class="toc">
+    <div class="further-h">On this page</div>
+    <ul>
+      <li><a href="#triangle">The impossible triangle</a></li>
+      <li><a href="#collision">Official vs unofficial</a></li>
+      <li><a href="#window">The 24-hour window</a></li>
+      <li><a href="#native">What "native" really means</a></li>
+      <li><a href="#bans">How bans actually happen</a></li>
+      <li><a href="#telegram">Telegram, the second channel</a></li>
+      <li><a href="#killtest">The kill-test</a></li>
+      <li><a href="#verdict">The verdict</a></li>
+    </ul>
+  </div>
+
+  <h2 id="triangle">The impossible triangle</h2>
+  <p>The original brief asked for three things from WhatsApp at once. Each sounds reasonable. The
+  research found that <strong>you can have any one or two of them, but never all three on a single
+  path.</strong></p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  T["Pick any TWO.<br/>You cannot have all three."]
+  G1["① Import the worker's<br/>FULL message history"]
+  G2["② Look like an ordinary<br/>personal account"]
+  G3["③ Never get banned"]
+  T --- G1
+  T --- G2
+  T --- G3
+  G1 -. ①+② only unofficial — loses ③ .- G2
+  G2 -. ②+③ impossible — native forfeits safety .- G3
+  G1 -. ①+③ impossible — safe path caps history .- G3
+  classDef goal fill:#fbf1e3,stroke:#b06a1a,color:#1b2330;
+  class G1,G2,G3 goal;
+    </pre>
+    <p class="figcap">Figure 1 — The three goals are mutually exclusive in pairs. The research puts
+    the odds of the premise <em>exactly as written</em> being durable past 12 months at
+    <strong>5–15%</strong>.</p>
+  </div>
+
+  <p>So we keep the goals that matter — a worker who books faster and stays safer — and choose the
+  combination that actually survives: <strong>history stays on the worker's own phone</strong>
+  (only a recent window syncs into the CRM), <strong>a business account on the same number</strong>
+  (native-enough), and <strong>a sanctioned path plus a second channel</strong> so a single ban is
+  never the end. The rest of this page shows the evidence for each trade.</p>
+
+  <h2 id="collision">Official vs unofficial WhatsApp — the honest comparison</h2>
+  <p>There are two ways to connect to WhatsApp. They are not "good and better" — they are two
+  completely different risk profiles, and the choice shapes the whole company.</p>
+
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>The goal</th>
+        <th>Official Cloud API <span class="pill good">sanctioned</span></th>
+        <th>Unofficial libraries <span class="pill bad">against the rules</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Import full history</strong></td>
+        <td class="cell-warn">Capped: ~6 months of texts, ~2 weeks of media, <strong>no group
+        chats</strong>, via "Coexistence".</td>
+        <td class="cell-good">Can read the phone's on-device history after pairing.</td>
+      </tr>
+      <tr>
+        <td><strong>Look native / consumer</strong></td>
+        <td class="cell-bad">No — it becomes a <em>Business</em> account; a personal app can't
+        share the number.</td>
+        <td class="cell-warn">Closest to "normal," but the number is visibly automation-driven.</td>
+      </tr>
+      <tr>
+        <td><strong>Avoid bans</strong></td>
+        <td class="cell-good">Yes — it's the sanctioned channel.</td>
+        <td class="cell-bad">No — detected by fingerprint regardless of behaviour. Typical account
+        lifespan <strong>2–8 weeks</strong>; cold numbers banned within ~2 hours.</td>
+      </tr>
+      <tr>
+        <td><strong>Appeal a ban</strong></td>
+        <td class="cell-good">Normal business support process.</td>
+        <td class="cell-bad">Appeals succeed roughly <strong>1 in 37</strong>.</td>
+      </tr>
+      <tr>
+        <td><strong>Best used as…</strong></td>
+        <td class="cell-good">The <strong>durable primary path</strong>, where available.</td>
+        <td class="cell-warn">A <strong>scoped fallback / kill-test only</strong> — never the sole
+        dependency.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="src">Source: <code>docs/research/00_synthesis.md</code> §2–3. The On-Premises API that
+  might once have been a third option is <strong>fully shut down (23 Oct 2025)</strong>, so the
+  Cloud API is the only sanctioned route and its constraints are unavoidable.</p>
+
+  <div class="callout key">
+    <span class="label">Our decision</span>
+    <p><strong>Official Cloud API + Coexistence is the durable primary.</strong> The unofficial
+    path (e.g. Baileys) is kept strictly as a <em>kill-test and regional fallback</em>, isolated,
+    and never something a worker's livelihood depends on alone. And because the platform bans this
+    category of work by <em>policy</em> regardless of technique, the product itself must be neutral,
+    general-purpose tooling — which is true on both paths.</p>
+  </div>
+
+  <details class="tech">
+    <summary>Tech info: Coexistence — the only history path, and its fine print <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p><strong>Coexistence</strong> lets the worker keep using the WhatsApp <em>Business</em> app
+      on their phone while the Cloud API mirrors the same number. Messages sent from the phone echo
+      into the API (<code>smb_message_echoes</code>), so the worker and the CRM see one unified
+      thread.</p>
+      <ul>
+        <li><strong>Syncs into the API:</strong> ~<strong>180 days</strong> of 1:1 text,
+        ~<strong>14 days</strong> of media, all contacts. <strong>Excludes</strong> groups, calls,
+        disappearing/view-once, broadcast lists.</li>
+        <li>Requires the <strong>WhatsApp Business app (green), v2.24.17+</strong> — not consumer
+        WhatsApp. Switching from consumer to Business is <strong>not</strong> history-destroying when
+        a backup exists (this corrects an early worry that migration wipes history).</li>
+        <li>The worker's <strong>full lifetime history survives on-device</strong> and via export —
+        only the API <em>sync</em> is capped. We frame this honestly to workers.</li>
+        <li>Operational fragility: the Business app must be opened every <strong>13 days</strong>;
+        uninstalling disconnects the integration; disappearing messages / view-once / live location
+        / edit-revoke are disabled while connected.</li>
+        <li><strong>Regional availability is the load-bearing risk.</strong> Commonly excluded:
+        EU/EEA, UK, Australia (+61), Japan, South Korea — <em>and the list shifts</em>. Must be
+        verified for each real user's country. Where unavailable → Telegram or a scoped unofficial
+        fallback.</li>
+      </ul>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started/migrate-existing-whatsapp-number-to-a-business-account/" target="_blank" rel="noopener">Meta — migrate an existing number to a Business account</a></li>
+          <li><a href="https://docs.360dialog.com/docs/resources/phone-numbers/coexistence" target="_blank" rel="noopener">360dialog — Coexistence overview & webhooks</a></li>
+          <li><a href="https://saleshiker.com/kb/whatsapp-coexistence-connect-whatsapp-business-apps-to-whatsapp-api/limitations-of-whatsapp-co-existence-business-app-cloud-api/" target="_blank" rel="noopener">Coexistence limitations (180d / 14d / no groups)</a></li>
+          <li><a href="https://developers.facebook.com/docs/whatsapp/on-premises/sunset" target="_blank" rel="noopener">Meta — On-Premises API sunset (Oct 2025)</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <details class="tech">
+    <summary>Tech info: the unofficial libraries, and the supply-chain landmine <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>The unofficial path means self-hosting a library that pretends to be a WhatsApp client:</p>
+      <ul>
+        <li><strong>Baileys</strong> — pure WebSocket, no browser, the most active option
+        (~469k weekly downloads, MIT). ~60–80 MB RAM/session, ~500 sessions/server. Most flexible,
+        but you own all ban-handling and reconnection.</li>
+        <li><strong>whatsapp-web.js</strong> — drives a headless Chromium (~250–400 MB/session,
+        ~50/server, needs browser restarts every 1–2h). Heavier; bans reported almost immediately on
+        connect.</li>
+        <li>Hosted gray-market wrappers (Whapi, GreenAPI, WAHA) offer flat per-number pricing but
+        <strong>can read all message content</strong> — a hard objection for sensitive users.
+        (GreenAPI is community-flagged as Russia-linked; WAHA self-hosted keeps data on your infra.)</li>
+      </ul>
+      <div class="callout bad">
+        <span class="label">Supply-chain risk is real</span>
+        <p>In December 2025 a poisoned Baileys fork (<code>lotusbail</code>, ~56k downloads)
+        exfiltrated tokens, messages, contacts and media. Any unofficial dependency must be
+        version-pinned and lockfile-audited or it becomes a breach vector. This is one more reason
+        unofficial is fallback-only.</p>
+      </div>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://github.com/WhiskeySockets/Baileys" target="_blank" rel="noopener">Baileys (WhiskeySockets) repository</a></li>
+          <li><a href="https://www.theregister.com/2025/12/22/whatsapp_npm_package_message_steal/" target="_blank" rel="noopener">The Register — poisoned WhatsApp npm package (Dec 2025)</a></li>
+          <li><a href="https://green-api.com/en/docs/faq/how-to-protect-number-from-ban/" target="_blank" rel="noopener">GreenAPI — ban-protection FAQ (vendor view)</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="window">The 24-hour window — the other hard wall</h2>
+  <p>Even on the safe official path, you can't just message clients whenever you like. WhatsApp only
+  lets a business send <strong>free-form</strong> messages inside a <strong>24-hour window that the
+  client opens by messaging first</strong>. Each new message from the client resets the clock.
+  Outside that window, the business can only send <strong>pre-approved template messages</strong>.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Client
+  participant Worker as Worker (via WorkerApp)
+  Client->>Worker: "Hi, are you free Friday?"
+  Note over Worker: 24h window OPENS — free replies allowed
+  Worker->>Client: Free-form reply (drafted by AI, worker-approved)
+  Note over Worker,Client: ...24 hours of silence...
+  Note over Worker: Window CLOSED
+  Worker--xClient: ✗ Cannot send a free-form re-engagement
+  Worker->>Client: ✓ Only a pre-approved TEMPLATE message
+    </pre>
+    <p class="figcap">Figure 2 — Inside the window, replies are free and natural. Outside it, only
+    approved templates. WorkerApp's UI shows the worker exactly which state they're in.</p>
+  </div>
+
+  <p>This is a real constraint on the fantasy of "just text all my clients naturally any time." But
+  it's a <em>manageable</em> one: most of a worker's conversation happens inside live windows (and
+  those replies are free), and the CRM surfaces the window state so nobody is surprised.</p>
+
+  <details class="tech">
+    <summary>Tech info: window pricing and message categories <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Since the per-message pricing change (1 July 2025):</p>
+      <ul>
+        <li><strong>Service</strong> (non-template replies inside an open window): <strong>free and
+        unlimited</strong> since 1 Nov 2024.</li>
+        <li><strong>Utility</strong> templates: free inside an open window, paid outside it.</li>
+        <li><strong>Marketing</strong> templates: always paid, no volume discount.</li>
+        <li><strong>Authentication</strong> templates: always paid (volume-discounted).</li>
+        <li><strong>Free entry-point</strong> (click-to-WhatsApp ad / Page CTA): all messages free
+        for 72h.</li>
+      </ul>
+      <p>The cost lever is obvious: keep replies <em>inside</em> the free window and the messaging
+      bill collapses to marketing-only. This is why AI inference, not messaging, is the dominant
+      cost — see the <a href="costs.html">Costs</a> page. <em>All rates are medium-confidence; Meta
+      revises the rate card roughly every 6 months — re-verify the destination-country line before
+      committing.</em></p>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing/conversation-based-pricing/" target="_blank" rel="noopener">Meta — conversation/per-message pricing</a></li>
+          <li><a href="https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing" target="_blank" rel="noopener">Meta — WhatsApp pricing (rate card)</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="native">What "appear as native" really means</h2>
+  <p>The honest answer: on the safe path, the worker's number becomes a <strong>WhatsApp Business
+  account</strong> — same phone number, same single chat thread the client already knows, the green
+  Business app still on the worker's phone. To the client it looks and behaves like a normal
+  business chat. It is <em>native-enough</em>: nobody has to change their number, and the client
+  keeps chatting in the same thread.</p>
+  <p>What it is <strong>not</strong> is an ordinary <em>personal</em> account that looks like a
+  friend texting. That illusion only exists on the unofficial path — and it costs you ban-safety,
+  which is not a trade worth making for a tool people depend on for income and safety. We choose to
+  be straight about this rather than promise something we'd have to walk back.</p>
+
+  <h2 id="bans">How bans actually happen</h2>
+  <p>Understanding the ban mechanism is what lets us design around it. There are two families of
+  signal:</p>
+  <div class="cards">
+    <div class="card">
+      <p class="k">Fingerprinting</p>
+      <p>The platform can tell an unofficial client from a real one by how it talks to the servers —
+      regardless of how careful or low-volume you are. This is why "behave nicely" doesn't save an
+      unofficial account.</p>
+    </div>
+    <div class="card">
+      <p class="k">Behaviour & reports</p>
+      <p>High send-rate, low reply ratio, messaging strangers, bulk-identical content — and above
+      all, <strong>recipients blocking or reporting you</strong>, the single fastest route to a ban.</p>
+    </div>
+  </div>
+  <p>The scary-sounding "cascade ban" — where banning one account chain-bans the rest — is, for the
+  unofficial path, mostly <strong>vendor speculation, not documented</strong>. What's real is
+  subtler and we account for both:</p>
+  <ul>
+    <li><strong>Monoculture waves:</strong> if a whole fleet runs the <em>same</em> library from
+    shared infrastructure, a single platform detection update bans a big chunk at once. It looks
+    like a cascade; it's really everyone sharing one fingerprint.</li>
+    <li><strong>Portfolio pooling (official, and documented):</strong> since 7 Oct 2025, the platform
+    enforces at the <strong>Business Portfolio level</strong> — numbers grouped together share
+    quality and limits, so one bad number can block the whole group from scaling. This is a real
+    single-point-of-failure we design around (see <a href="scaling.html">Scaling</a>).</li>
+  </ul>
+
+  <div class="callout warn">
+    <span class="label">Why decoupling is non-negotiable</span>
+    <p>On a ban, an unprotected design loses the dangerous-client flags <em>exactly when they're
+    needed most</em>. WorkerApp keeps those flags — and all CRM data — completely separate from the
+    messaging session, so a ban costs a channel, not a worker's safety net.</p>
+  </div>
+
+  <h2 id="telegram">Telegram — the sanctioned second channel</h2>
+  <p>The simplest insurance against "what if WhatsApp bans us?" is to not depend on WhatsApp alone.
+  Telegram offers a <strong>sanctioned, official bot API</strong> — no adult-content ban, global
+  reach, and no gray-market risk. It runs behind the very same internal interface as WhatsApp, so
+  to the rest of WorkerApp it's just another channel.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  WA["WhatsApp<br/>(official, primary)"]:::ch
+  TG["Telegram<br/>(sanctioned, parallel)"]:::ch
+  SIG["Signal<br/>(later)"]:::chl
+  IFACE{{"One internal interface:<br/>MessagingProvider"}}
+  CRM["The CRM<br/>(never knows which channel)"]:::crm
+  WA --> IFACE
+  TG --> IFACE
+  SIG -.-> IFACE
+  IFACE --> CRM
+  classDef ch fill:#e9f2f6,stroke:#2c6e8f,color:#1b2330;
+  classDef chl fill:#f6f8fb,stroke:#a8b4c2,color:#717c8c,stroke-dasharray: 4 3;
+  classDef crm fill:#eef2f7,stroke:#4a5568,color:#1b2330;
+    </pre>
+    <p class="figcap">Figure 3 — Channels are swappable behind one interface. A WhatsApp ban
+    degrades to a single-channel outage, not a business-ending event. Detail on the
+    <a href="technical.html">Technical</a> page.</p>
+  </div>
+
+  <h2 id="killtest">The kill-test — settle the biggest unknown first</h2>
+  <p>The single highest-value thing we can do is <strong>not</strong> build a grand architecture.
+  It's to run a cheap, brutal experiment that tries to <em>falsify</em> the whole premise before a
+  line of platform code is written. If a throwaway number gets banned in hours, we've learned the
+  most important fact in the business for the price of a coffee — and that's a <em>good</em> outcome.</p>
+
+  <p>Concretely: run <strong>one throwaway number</strong> through an off-the-shelf bridge with
+  human-paced, realistic traffic, and measure two things — <strong>how long until it's banned</strong>,
+  and <strong>how much real history actually comes back</strong>. In parallel, stand up a single
+  official Coexistence number to check regional availability and the real sync depth. Write no
+  platform code until the first test passes.</p>
+
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Experiment</th><th>What it proves</th><th>Build-days</th><th>$/mo</th><th>Ban risk</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Off-the-shelf bridge, 1 throwaway number</strong> (human-paced)</td>
+        <td>Baseline time-to-ban; the history depth actually returned</td>
+        <td>1–2</td><td>$12–35</td><td class="no">High</td>
+      </tr>
+      <tr>
+        <td>WAHA self-host, 1 number</td>
+        <td>Data-sovereignty wrapper works; you hold the data</td>
+        <td>3–5</td><td>~$24</td><td class="no">High</td>
+      </tr>
+      <tr>
+        <td>Baileys self-host, 1 number</td>
+        <td>Cost floor, full control, full-history read</td>
+        <td>5–8</td><td>~$5+proxy</td><td class="no">High</td>
+      </tr>
+      <tr>
+        <td><strong>Official Cloud API + Coexistence</strong>, 1 Business number</td>
+        <td>The sanctioned path; real sync depth; region availability</td>
+        <td>5–10</td><td>per-msg</td><td class="yes">Low</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="src">Source: <code>docs/research/00_synthesis.md</code> §4 (test-rack). Sequence:
+  falsify cheaply first (week 1–2), stand up the official lane in parallel (week 1–3), and only run
+  the multi-number fingerprint test if the first survives.</p>
+
+  <h3>Go / No-Go signals</h3>
+  <div class="cards">
+    <div class="card">
+      <p class="k" style="color:var(--good)">GO — unofficial as fallback</p>
+      <p>Throwaway number survives <strong>≥ 4 weeks</strong> of realistic, human-paced traffic,
+      history depth meets the need, and numbers/IPs can be isolated.</p>
+    </div>
+    <div class="card">
+      <p class="k" style="color:var(--bad)">NO-GO — unofficial</p>
+      <p>Banned within days; or bans cluster across numbers sharing infrastructure; or appeals fail
+      (expected).</p>
+    </div>
+    <div class="card">
+      <p class="k" style="color:var(--good)">GO — official, reframed</p>
+      <p>Coexistence available in the user's region <strong>and</strong> a neutral, policy-compliant
+      brand identity survives platform review.</p>
+    </div>
+    <div class="card">
+      <p class="k" style="color:var(--bad)">NO-GO — official</p>
+      <p>Region unsupported, or no compliant brand identity can pass review.</p>
+    </div>
+  </div>
+
+  <h2 id="verdict">The verdict</h2>
+  <div class="callout" style="border-left-color:var(--ink-faint);background:var(--paper-3)">
+    <span class="label" style="color:var(--ink-faint)">Kill-test result — pending</span>
+    <p>The two-week experiment is owned and run by the chat-layer build track, which writes its
+    go/no-go verdict to <code>docs/killtest/results.md</code>. <strong>That result is not yet
+    in.</strong> When it lands, this section reports the verdict and the measured numbers
+    (time-to-ban, history depth, regional availability) sourced directly from that file — not from
+    the research, and not invented here.</p>
+    <p style="margin-bottom:0"><strong>What we expect, and why it's still a win either way:</strong>
+    if the unofficial number is banned fast, the premise-as-originally-written is cheaply falsified
+    and we commit fully to the official + Telegram path. If it survives four weeks, we gain a scoped
+    fallback for regions where the official path isn't available. Both outcomes are designed for.</p>
+  </div>
+
+  <p class="src">Per <code>tracks/C-scoping-site.md</code>, the kill-test verdict on this page is
+  sourced from <code>docs/killtest/results.md</code> (build-track owned), <em>not</em> from
+  <code>docs/research/</code>. Until that file exists, the verdict is shown as pending rather than
+  guessed.</p>
+
+  <div class="pager">
+    <a href="index.html"><small>Back</small>← Overview</a>
+    <a class="nxt" href="infrastructure.html"><small>Next</small>Infrastructure →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerApp</strong> — investor scoping site. The chat-layer figures trace to
+    <code>docs/research/00_synthesis.md</code> §2–4; the kill-test verdict traces to
+    <code>docs/killtest/results.md</code> when available. Platform pricing and regional availability
+    must be re-verified before launch.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
+      lineColor: "#4a5568", fontSize: "14px"
+    },
+    flowchart: { curve: "basis", useMaxWidth: true },
+    sequence: { useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

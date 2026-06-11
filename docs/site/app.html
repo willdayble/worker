@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerApp — The CRM App</title>
+<meta name="description" content="What the worker actually uses: onboarding, the inbox-to-booking flow, tagging, closing the loop, knowing where clients came from, and a disclosed AI assistant that never acts on its own.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="infrastructure.html">Infrastructure</a>
+      <a href="app.html" class="active">The App</a>
+      <a href="chat.html">Chat Layer</a>
+      <a href="technical.html">Technical</a>
+      <a href="scaling.html">Scaling</a>
+      <a href="costs.html">Costs</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">The product · What the worker uses every day</p>
+  <h1>An inbox that turns messages into booked, safer work.</h1>
+  <p class="lede">This is the part that looks like a normal, friendly app — because the hard
+  problems are handled underneath it. A worker connects a channel, sees their conversations, and
+  moves each one from "just enquired" to "booked and done" with less typing, fewer time-wasters,
+  and a quiet safety net. None of these patterns are novel; the research is clear that this layer is
+  a <em>solved problem to borrow from</em>, not to reinvent.</p>
+</header>
+
+<main class="wrap">
+
+  <div class="toc">
+    <div class="further-h">On this page</div>
+    <ul>
+      <li><a href="#onboard">Onboarding in one sitting</a></li>
+      <li><a href="#flow">Inbox → booking, step by step</a></li>
+      <li><a href="#tagging">Tagging &amp; the services menu</a></li>
+      <li><a href="#closeloop">Closing the loop</a></li>
+      <li><a href="#attribution">Knowing where clients came from</a></li>
+      <li><a href="#ai">The disclosed AI assistant</a></li>
+      <li><a href="#safety">The safety net</a></li>
+    </ul>
+  </div>
+
+  <h2 id="onboard">Onboarding in one sitting</h2>
+  <p>A worker should be productive the first afternoon. Onboarding is: create an account, connect a
+  channel (scan a code or enter a pairing code, depending on the channel), watch recent
+  conversations flow in, and read a plain-language notice about what the AI does and what the app
+  can and can't see. No data migration project, no training course.</p>
+  <div class="callout">
+    <span class="label">Honest by default</span>
+    <p>The onboarding notice covers <strong>both</strong> directions of AI use — drafting replies
+    <em>and</em> analysing incoming messages — and states plainly that during the prototype the
+    operator can technically decrypt data while a session is live. Consent is informed, not buried.</p>
+  </div>
+
+  <h2 id="flow">Inbox → booking, step by step</h2>
+  <p>Every conversation moves along a simple, neutral pipeline. The worker is always in control; the
+  app just removes friction and forgetting.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  E["Enquiry<br/>new message<br/>arrives"]:::s --> S["Screening<br/>questions asked,<br/>safety checked"]:::s
+  S --> C["Confirmed<br/>time &amp; details<br/>agreed"]:::s
+  C --> D["Completed<br/>or Lost<br/>close the loop"]:::sd
+  classDef s fill:#e9f2f6,stroke:#2c6e8f,color:#1b2330;
+  classDef sd fill:#eef2f7,stroke:#4a5568,color:#1b2330;
+    </pre>
+    <p class="figcap">Figure 1 — The pipeline. Deliberately generic stages that any service
+    business would recognise. Each contact sits in exactly one stage at a time.</p>
+  </div>
+
+  <ol>
+    <li><strong>A message arrives.</strong> It appears in the inbox as a new enquiry, with the
+    contact created automatically and a draft reply already suggested (the worker can ignore it).</li>
+    <li><strong>Screening.</strong> The worker asks their usual questions; an optional external
+    screening check and an advisory red-flag signal help spot trouble early.</li>
+    <li><strong>Confirmed.</strong> When a time and the details are agreed, the booking is recorded —
+    service, fee, date — in a couple of taps.</li>
+    <li><strong>Completed or Lost.</strong> Afterwards, the worker closes the loop so the system
+    learns what actually happened.</li>
+  </ol>
+
+  <h2 id="tagging">Tagging &amp; the services menu</h2>
+  <p>Workers tag contacts and conversations with a customisable menu — the kinds of work offered,
+  the intent of an enquiry, where in the pipeline things stand. The AI suggests tags from the
+  message, but the worker owns the menu and the final say.</p>
+  <div class="callout key">
+    <span class="label">Neutral on the surface, always</span>
+    <p>Public-facing materials and the data model use <strong>general-purpose, neutral terms</strong>
+    only. Whatever a worker calls their own services privately, the system's schema and anything an
+    investor or the public sees stays generic. This is a deliberate legal and brand choice, not an
+    accident of wording.</p>
+  </div>
+
+  <h2 id="closeloop">Closing the loop</h2>
+  <p>The single most valuable habit the app builds is recording how each booking <em>ended</em>.
+  Four neutral outcomes capture almost everything worth knowing:</p>
+  <div class="cards">
+    <div class="card"><p class="k" style="color:var(--good)">Won</p><p>Booked and completed. Service,
+    fee and date logged — the raw material for every later insight.</p></div>
+    <div class="card"><p class="k">Lost</p><p>Didn't convert, for ordinary reasons. Useful for
+    understanding conversion.</p></div>
+    <div class="card"><p class="k" style="color:var(--warn)">Time-waster</p><p>Never going to book.
+    Recognising the pattern protects the worker's attention.</p></div>
+    <div class="card"><p class="k" style="color:var(--bad)">Dangerous</p><p>Flagged for safety —
+    advisory, human-set, and decoupled so it survives a ban.</p></div>
+  </div>
+  <p>Because outcomes are logged consistently, the cross-user dashboards (built for the test phase,
+  with explicit consent) can surface things no individual worker could see alone: which sources
+  convert, time-to-book, where time-wasters cluster.</p>
+
+  <h2 id="attribution">Knowing where clients came from</h2>
+  <p>When a new client first makes contact, the app records <strong>where they came from</strong> —
+  which advert, link, or page — and writes it down <strong>once, permanently</strong>, at the moment
+  the contact is created. First-touch attribution is a well-worn convention; the only discipline
+  that matters is writing it once and never overwriting it.</p>
+  <details class="tech">
+    <summary>Tech info: how first-touch attribution is captured <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Standard marketing-attribution plumbing: capture UTM parameters into hidden form fields,
+      persist them in a cookie across pages, and write the first-touch value into a
+      <strong>write-once</strong> field at contact creation. The entry-point is stored per contact
+      and never mutated, so attribution can't drift as a client interacts later.</p>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://www.saascend.com/best-practices-for-lead-source-tracking-capturing-utm-parameters-with-hidden-fields/" target="_blank" rel="noopener">Lead-source tracking with UTM parameters &amp; hidden fields</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="ai">The disclosed AI assistant</h2>
+  <p>The AI is a <strong>collaborator, never an autopilot</strong>. For each incoming message it does
+  one structured analysis — is this a booking? what's the intent? any safety red flags? a suggested
+  reply — and then hands everything to the worker. The rules that decide what happens next live in
+  <strong>ordinary, predictable code, not the model</strong>.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  M["Incoming message"] --> AI["AI reads it once:<br/>booking? intent? red flags?<br/>draft reply? confidence?"]
+  AI --> R{"Confident<br/>enough?"}
+  R -->|"Yes"| T["Auto-tag +<br/>stage a DRAFT reply"]:::ok
+  R -->|"No"| H["Escalate to the worker<br/>with the full thread"]:::esc
+  T --> A["Worker reviews"]:::human
+  H --> A
+  A --> SEND["Worker approves →<br/>message sent"]:::send
+  classDef ok fill:#e9f2f6,stroke:#2c6e8f,color:#1b2330;
+  classDef esc fill:#fbf1e3,stroke:#b06a1a,color:#1b2330;
+  classDef human fill:#eef2f7,stroke:#4a5568,color:#1b2330;
+  classDef send fill:#e7f4ec,stroke:#2f7d4f,color:#1b2330;
+    </pre>
+    <p class="figcap">Figure 2 — The AI drafts and flags; a human always decides. There is no path
+    on this diagram where a message is sent, or a client blocked, without the worker.</p>
+  </div>
+
+  <div class="callout warn">
+    <span class="label">Two hard rules, no exceptions</span>
+    <p><strong>Never auto-send. Never auto-block.</strong> A wrongly-sent message or a false
+    "time-waster" flag has real consequences — a denied booking is lost income for the worker. So
+    the AI is advisory on the way in and collaborative on the way out, every time.</p>
+  </div>
+
+  <details class="tech">
+    <summary>Tech info: one structured call, and why disclosure runs both ways <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Each inbound message triggers a single <strong>schema-constrained</strong> model call that
+      always returns valid structured data — booking flag and neutral booking fields, intent tags,
+      service tags, advisory red flags, a suggested reply, and a confidence score. A confidence
+      threshold in deterministic code decides whether to stage a draft or escalate to a human.</p>
+      <ul>
+        <li><strong>Neutral schema:</strong> field names and values stay general-purpose. The AI
+        extracts generic appointment data; it does not broker a transaction.</li>
+        <li><strong>Disclosure both directions:</strong> outbound — any AI-authored text reaching a
+        client is approved by the worker (or clearly labelled as an assistant), to satisfy bot-
+        disclosure laws. Inbound — clients' messages are AI-analysed for tagging and red-flagging,
+        which is automated processing of someone else's sensitive data, so the red flags are
+        <strong>advisory only</strong> and the privacy notice discloses the inbound analysis too.</li>
+        <li><strong>Cost-aware routing:</strong> a fast, cheap model handles routine extraction with
+        a large cached prompt; a stronger model is reserved for drafting and judgement. See
+        <a href="costs.html">Costs</a>.</li>
+      </ul>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener">Claude — structured outputs (schema-constrained JSON)</a></li>
+          <li><a href="https://missiveapp.com/docs/advanced-features/rules/ai-rules" target="_blank" rel="noopener">Missive AI Rules — the closest UX blueprint</a></li>
+          <li><a href="https://gdpr-info.eu/art-9-gdpr/" target="_blank" rel="noopener">GDPR Article 9 — why inbound analysis stays advisory</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="safety">The safety net</h2>
+  <p>Safety is woven through the whole app, not bolted on. An optional external screening source can
+  be checked at the screening stage; an AI behavioural signal flags concerning patterns as a
+  <em>separate, advisory</em> input; and every dangerous-client flag is human-set, append-only,
+  audit-logged, and — crucially — stored independently of the messaging channel so a ban can never
+  erase it. False positives are recoverable by a human, because a wrong flag has real costs too.</p>
+  <p class="src">Patterns and guardrails sourced from <code>docs/research/00_synthesis.md</code> §6
+  (CRM/app layer — "steal, don't invent") and <code>docs/CONTRACTS.md</code> §6 (AI-assist contract).
+  The closest existing blueprints named by the research are Missive (AI rules), Kommo (messenger-
+  native pipelines), and Front (multi-channel inbox).</p>
+
+  <div class="pager">
+    <a href="infrastructure.html"><small>Back</small>← Infrastructure</a>
+    <a class="nxt" href="technical.html"><small>Next</small>Technical →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerApp</strong> — investor scoping site. The CRM layer borrows proven patterns;
+    figures and blueprints trace to <code>docs/research/00_synthesis.md</code> §6. The AI never
+    auto-sends and never auto-blocks — a frozen product rule, not a setting.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
+      lineColor: "#4a5568", fontSize: "14px"
+    },
+    flowchart: { curve: "basis", useMaxWidth: true }
+  });
+</script>
+</body>
+</html>

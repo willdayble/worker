@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerApp — Infrastructure & Data Sovereignty</title>
+<meta name="description" content="Where the worker's data lives, who can read it, and the honest difference between encryption-at-rest today and zero-knowledge encryption on the roadmap.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>App</span></a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="infrastructure.html" class="active">Infrastructure</a>
+      <a href="app.html">The App</a>
+      <a href="chat.html">Chat Layer</a>
+      <a href="technical.html">Technical</a>
+      <a href="scaling.html">Scaling</a>
+      <a href="costs.html">Costs</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">The foundation · Where the data lives</p>
+  <h1>The worker's records belong to the worker — and outlive any platform.</h1>
+  <p class="lede">This is the layer an investor should care about most, because it's where the legal
+  and safety risk concentrates, and it's where the moat is deepest. The promise is simple: a ban,
+  a stolen backup, or a shut-down account never destroys a worker's client list or safety flags.
+  The detail is where we're scrupulously honest about what we can and can't protect today.</p>
+</header>
+
+<main class="wrap">
+
+  <div class="toc">
+    <div class="further-h">On this page</div>
+    <ul>
+      <li><a href="#why">Why this is the gravest liability</a></li>
+      <li><a href="#sovereignty">Data sovereignty in plain terms</a></li>
+      <li><a href="#history">On-device history</a></li>
+      <li><a href="#encryption">At-rest vs zero-knowledge — the honest line</a></li>
+      <li><a href="#roadmap">The encryption roadmap</a></li>
+      <li><a href="#tenancy">Multi-tenant isolation</a></li>
+      <li><a href="#future">Future: cross-worker shared safety tags</a></li>
+    </ul>
+  </div>
+
+  <h2 id="why">Why this is the gravest liability — and it's solvable</h2>
+  <p>The information a tool like this holds is unusually sensitive: real identities plus
+  conversation logs, in a context where a leak isn't an embarrassment but a <strong>physical-safety
+  event</strong> — outing, stalking, extortion. Under European data-protection law this is
+  "special-category" data (the most protected kind), and flagging a client as dangerous adds
+  criminal-offence data on top. The potential fines run to tens of millions; the human cost is
+  worse.</p>
+  <div class="callout key">
+    <span class="label">The reassuring part</span>
+    <p>This is a <strong>solved engineering problem</strong>, not an open research question. The
+    defensible answer — encrypted records over a central database where the operator stores
+    ciphertext and keys are held per-user — exists today with mature, audited tools. The challenge
+    is discipline and honesty, not invention.</p>
+  </div>
+
+  <h2 id="sovereignty">Data sovereignty, in plain terms</h2>
+  <p>"Sovereignty" here means a few concrete guarantees a worker can actually feel:</p>
+  <div class="cards">
+    <div class="card"><p class="k">It's yours</p><p>Your client list, notes, bookings and flags are
+    your records — not a platform's, and not hostage to your phone number.</p></div>
+    <div class="card"><p class="k">It survives a ban</p><p>Lose the WhatsApp number and the records
+    are untouched. You reconnect a different channel and carry on.</p></div>
+    <div class="card"><p class="k">It's encrypted</p><p>Sensitive fields are stored as ciphertext.
+    A stolen disk or backup is useless to a thief.</p></div>
+    <div class="card"><p class="k">You can leave</p><p>You can export your data in plain form and
+    take it with you. No lock-in, by design.</p></div>
+  </div>
+
+  <h2 id="history">On-device history — owning what we can't import</h2>
+  <p>As the <a href="chat.html">Chat Layer</a> explains, only a recent window of history can be
+  pulled into the CRM. But the worker's <strong>full lifetime history never leaves their phone</strong>
+  — it stays in the WhatsApp Business app and can be exported. We treat that as a feature, not a
+  shortfall: less of the most sensitive data centralised on our servers means a smaller breach
+  blast-radius. The CRM holds what it needs to do its job (a working window), and the deep archive
+  stays with its owner.</p>
+
+  <h2 id="encryption">At-rest vs zero-knowledge — the line we will not blur</h2>
+  <p>This is the most important honesty on the whole site. There are two very different promises a
+  product can make about encryption, and they are <strong>not</strong> the same thing:</p>
+
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th></th><th>Encryption at rest <span class="pill good">today</span></th><th>Zero-knowledge / client-side E2EE <span class="pill info">roadmap</span></th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>What it means</strong></td>
+        <td>Data is stored as ciphertext; the key is held by the operator's systems and loaded only
+        when needed.</td>
+        <td>Only the worker's own device holds the key. The operator literally cannot read the data,
+        even if compelled to.</td></tr>
+      <tr><td><strong>Defeats a stolen disk / backup</strong></td>
+        <td class="yes">Yes</td><td class="yes">Yes</td></tr>
+      <tr><td><strong>Defeats a live-server compromise</strong></td>
+        <td class="no">No — while a session is live, the operator can technically decrypt.</td>
+        <td class="yes">Yes</td></tr>
+      <tr><td><strong>"We can't read your data"</strong></td>
+        <td class="no">Not true — so we don't say it.</td>
+        <td class="yes">True — the goal.</td></tr>
+      <tr><td><strong>Status</strong></td>
+        <td class="meh"><strong>What the prototype ships.</strong></td>
+        <td class="meh"><strong>Where we're heading.</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <span class="label">We say this plainly to test users</span>
+    <p>During the prototype, <strong>the operator can technically decrypt a worker's data while
+    that worker's session is live.</strong> That is not zero-knowledge, and we never market it as
+    such. Test users are told this in plain language. Over-claiming here would be both a trust
+    failure and a legal one.</p>
+  </div>
+
+  <p>Why the gap exists at all: a messaging tool that works <em>while the worker's phone is off</em>
+  needs an always-on server holding the live conversation — and an always-on server, by definition,
+  processes some plaintext to do its job. True "operator-can-never-read" encryption assumes the
+  worker's own device does that work, which breaks the "works while your phone is off" promise. It's
+  a genuine trade-off, not an oversight — so we treat it as a <strong>spectrum</strong> and let
+  each worker pick their point on it.</p>
+
+  <details class="tech">
+    <summary>Tech info: the encryption boundary for the prototype <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Sensitive columns are stored as ciphertext using <strong>libsodium XChaCha20-Poly1305</strong>
+      with <strong>envelope encryption</strong>: one random per-user Data Encryption Key (DEK)
+      encrypts the data; the DEK is wrapped and the key material lives in a KMS, loaded into the
+      isolated worker process <em>only while that user's session is connected</em>.</p>
+      <ul>
+        <li><strong>Encrypted:</strong> message bodies, conversation previews, dangerous-client flag
+        reasons, all outbound payloads and destination identifiers, the messaging session
+        credentials, and all client-identifying free text.</li>
+        <li><strong>Not encrypted (operational):</strong> ids, timestamps, channel, status, counts —
+        enough to route and query, minimal personal data.</li>
+        <li><strong>Routing without exposing numbers:</strong> where an index on a phone number is
+        needed, a salted <strong>HMAC</strong> is stored, never the raw number.</li>
+      </ul>
+      <p><strong>Honest threat model:</strong> at-rest encryption defeats cold theft of a disk,
+      database, or backup. It does <strong>not</strong> defend against a live-server compromise or
+      theft of the key-management credentials while a session is active. Not zero-knowledge; that's
+      roadmap.</p>
+      <p>Underneath the encryption, every database table has <strong>Row-Level Security</strong>,
+      deny-by-default, keyed to the owning user — defence-in-depth <em>under</em> the encryption,
+      never the confidentiality boundary on its own. No policy is allowed to be a blanket
+      allow-all; the build pipeline fails if one slips in.</p>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://gdpr-info.eu/art-9-gdpr/" target="_blank" rel="noopener">GDPR Article 9 — special-category data</a></li>
+          <li><a href="https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/lawful-basis/a-guide-to-lawful-basis/criminal-offence-data/" target="_blank" rel="noopener">UK ICO — criminal-offence data (Article 10)</a></li>
+          <li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener">Supabase — Row-Level Security</a></li>
+          <li><a href="https://supabase.com/docs/guides/database/vault" target="_blank" rel="noopener">Supabase Vault — key/secret storage</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <h2 id="roadmap">The encryption roadmap toward true sovereignty</h2>
+  <p>The prototype's columns are designed so they can migrate to true end-to-end encryption
+  <em>without a rewrite</em>. The path is a spectrum, walked deliberately:</p>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  S1["Today<br/>Encryption at rest<br/>Keys in a managed vault,<br/>loaded only during a live session"]:::now
+  S2["Next<br/>Per-user isolated session<br/>processes; keys held in<br/>memory only"]:::mid
+  S3["Roadmap<br/>Client-held keys /<br/>on-device ingestion for<br/>workers who accept<br/>'phone must be online'"]:::goal
+  S1 --> S2 --> S3
+  classDef now fill:#e7f4ec,stroke:#2f7d4f,color:#1b2330;
+  classDef mid fill:#e9f2f6,stroke:#2c6e8f,color:#1b2330;
+  classDef goal fill:#eef2f7,stroke:#4a5568,color:#1b2330,stroke-dasharray:4 3;
+    </pre>
+    <p class="figcap">Figure 1 — A spectrum, not a switch. Each worker chooses how far toward
+    full sovereignty they want to go, trading convenience against the "phone must be online"
+    requirement.</p>
+  </div>
+  <p class="src">Source: <code>docs/SCOPE.md</code> §6 (the honest E2EE-vs-server-bridge tension)
+  and <code>docs/research/00_synthesis.md</code> §5. A passkey is never the sole key-holder —
+  losing it must never mean losing the data, so a recovery phrase always backs it up.</p>
+
+  <h2 id="tenancy">Multi-tenant isolation</h2>
+  <p>Many workers share one system, but no worker can ever see another's data. Each worker's records
+  are partitioned and access-controlled at the database level, deny-by-default, so isolation is
+  enforced by the infrastructure rather than trusted to application code. In the prototype we run a
+  handful of test users this way to prove the isolation before any real scale.</p>
+
+  <h2 id="future">Future: cross-worker shared safety tags</h2>
+  <p>One of the most valuable things a community of workers can have is a shared, anonymous warning
+  network — a dangerous client flagged by one worker quietly protecting the next. The data model is
+  <strong>designed for this from day one, but it is deliberately not built yet</strong>, because it
+  carries real legal and privacy weight and must be done with care.</p>
+  <div class="callout">
+    <span class="label">Designed-for, not built</span>
+    <p>If and when shared safety tags arrive, they'll follow the established harm-reduction posture:
+    closed access to verified workers, anonymous reporting, explicit no-accuracy disclaimers,
+    member-controlled data, advisory-only, and kept separate from law enforcement by default.
+    Flags are append-only and never silently re-bound to a recycled or reassigned number — a
+    changed identity creates a new record and a human-review task, never an automatic
+    re-accusation.</p>
+  </div>
+
+  <details class="tech">
+    <summary>Tech info: why a recycled number is a safety problem <span class="tag">For technical readers</span></summary>
+    <div class="tech-body">
+      <p>Roughly <strong>66%</strong> of recycled phone numbers still resolve to a prior owner, and
+      tens of millions are recycled each year with no warning. Naively re-binding a dangerous-client
+      flag to "whoever has this number now" could either hand a stranger a worker's inbound messages
+      or wrongly accuse an innocent new owner. WorkerApp's rule: dangerous-client flags are
+      <strong>append-only</strong>, and a changed channel identity on a flagged contact creates a
+      <strong>new</strong> contact plus a human-review task — never an automatic, silent re-bind.</p>
+      <div class="further">
+        <div class="further-h">Further reading</div>
+        <ul>
+          <li><a href="https://www.sobot.io/article/how-reusing-phone-number-impacts-create-whatsapp-account-now/" target="_blank" rel="noopener">How reused phone numbers affect WhatsApp accounts</a></li>
+          <li><a href="https://nationaluglymugs.org/about-num/" target="_blank" rel="noopener">National Ugly Mugs — community safety-scheme model</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <div class="pager">
+    <a href="chat.html"><small>Back</small>← Chat Layer</a>
+    <a class="nxt" href="app.html"><small>Next</small>The App →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerApp</strong> — investor scoping site. Encryption is described conservatively
+    throughout: <strong>at-rest today, zero-knowledge on the roadmap</strong>. Figures trace to
+    <code>docs/research/00_synthesis.md</code> §5 and <code>docs/SCOPE.md</code> §6.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+      primaryColor: "#e9f2f6", primaryBorderColor: "#2c6e8f", primaryTextColor: "#1b2330",
+      lineColor: "#4a5568", fontSize: "14px"
+    },
+    flowchart: { curve: "basis", useMaxWidth: true }
+  });
+</script>
+</body>
+</html>
