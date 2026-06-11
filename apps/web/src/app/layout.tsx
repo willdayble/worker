@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'WorkerApp CRM',
+  title: 'WorkerChat CRM',
   description: 'Privacy-first, channel-agnostic CRM for independent service providers.',
   robots: { index: false, follow: false }, // never index the app
 };

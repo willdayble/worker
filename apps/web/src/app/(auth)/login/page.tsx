@@ -36,7 +36,7 @@ export default function LoginPage() {
         className="w-full max-w-sm space-y-4 rounded-xl border border-border p-6 shadow-sm"
       >
         <div>
-          <h1 className="text-lg font-semibold">WorkerApp CRM</h1>
+          <h1 className="text-lg font-semibold">WorkerChat CRM</h1>
           <p className="text-sm text-muted-foreground">Sign in to your workspace.</p>
         </div>
         <input

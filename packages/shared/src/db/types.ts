@@ -17,7 +17,7 @@
 
 // Channel/connection enums are re-used from the messaging contract so the DB
 // types and the wire types share one source of truth. They are NOT re-exported
-// here (the barrel and `@workerapp/shared/messaging` already export them) to
+// here (the barrel and `@workerchat/shared/messaging` already export them) to
 // avoid a duplicate-name clash across the two `export *` in src/index.ts.
 import type {
   Channel,

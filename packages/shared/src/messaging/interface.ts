@@ -3,11 +3,11 @@
 //
 // Track B owns this file (canonical definition). Track A implements the three
 // adapters (WhatsAppOfficial, WhatsAppUnofficial, Telegram) against it inside
-// apps/worker/src/messaging/adapters/ and imports them from `@workerapp/shared`.
+// apps/worker/src/messaging/adapters/ and imports them from `@workerchat/shared`.
 //
 // CHANGE PROTOCOL (CONTRACTS §2, red-team M4): an adapter that discovers a
 // missing field files an orchestrator request. **Track B** edits this file and
-// bumps the `@workerapp/shared` version; Track A pins to the new version.
+// bumps the `@workerchat/shared` version; Track A pins to the new version.
 // Track A must NOT edit this file, even transiently.
 //
 // The CRM (apps/web) NEVER imports a provider. apps/worker is the only code

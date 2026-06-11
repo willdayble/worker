@@ -22,7 +22,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r --if-present build   # build @workerapp/shared so app typechecks resolve its dist
+      - run: pnpm -r --if-present build   # build @workerchat/shared so app typechecks resolve its dist
       - run: pnpm -r --if-present lint
       - run: pnpm -r --if-present typecheck
       - run: pnpm -r --if-present test

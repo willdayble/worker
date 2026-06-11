@@ -1,4 +1,4 @@
-# WorkerApp — Master Scope (v0.1)
+# WorkerChat — Master Scope (v0.1)
 
 *Date: 2026-06-10. Source of truth for what we are building and why. Evidence: `docs/research/00_synthesis.md`. Interfaces: `docs/CONTRACTS.md`.*
 

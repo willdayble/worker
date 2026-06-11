@@ -1,5 +1,5 @@
 {
-  "name": "workerapp",
+  "name": "workerchat",
   "private": true,
   "version": "0.0.0",
   "description": "Privacy-first, channel-agnostic CRM + client comms for independent service providers.",

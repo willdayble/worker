@@ -2,7 +2,7 @@
 
 > Read `docs/SCOPE.md` and `docs/CONTRACTS.md` first. You own `apps/worker/**` (including
 > `apps/worker/src/messaging/adapters/**`). You implement against interfaces Track B publishes
-> in `@workerapp/shared` — you do not edit them, and provider SDKs go in `apps/worker` only.
+> in `@workerchat/shared` — you do not edit them, and provider SDKs go in `apps/worker` only.
 
 ## Mission
 Prove the WhatsApp channel is *survivable*, then deliver a multi-channel messaging worker
@@ -37,7 +37,7 @@ Goal: falsify or validate unofficial WhatsApp survivability as cheaply as possib
   and proceed now.
 
 ## Deliverable 2: the `MessagingProvider` adapters (`apps/worker/src/messaging/adapters/`)
-Implement the `MessagingProvider` interface from `@workerapp/shared` (Track B publishes) — the
+Implement the `MessagingProvider` interface from `@workerchat/shared` (Track B publishes) — the
 adapters live in **your** `apps/worker` tree, never in `packages/shared`; provider SDKs
 (Baileys, grammY/telegraf, libsodium) go in `apps/worker/package.json` only.
 

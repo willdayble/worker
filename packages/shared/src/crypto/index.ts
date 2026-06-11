@@ -55,7 +55,7 @@ function masterKey(): Uint8Array {
   const raw = process.env.WORKER_MASTER_KEY;
   if (!raw) {
     throw new Error(
-      '@workerapp/shared/crypto: WORKER_MASTER_KEY is not set. Provide a 32-byte key ' +
+      '@workerchat/shared/crypto: WORKER_MASTER_KEY is not set. Provide a 32-byte key ' +
         '(64 hex chars or base64) via Doppler (project worker). It is the master KEK; ' +
         'losing it makes all ciphertext unrecoverable, leaking it defeats encryption.',
     );
@@ -65,7 +65,7 @@ function masterKey(): Uint8Array {
     : sodium.from_base64(raw, sodium.base64_variants.ORIGINAL);
   if (key.length !== sodium.crypto_aead_xchacha20poly1305_ietf_KEYBYTES) {
     throw new Error(
-      `@workerapp/shared/crypto: WORKER_MASTER_KEY must decode to ${sodium.crypto_aead_xchacha20poly1305_ietf_KEYBYTES} bytes (got ${key.length}).`,
+      `@workerchat/shared/crypto: WORKER_MASTER_KEY must decode to ${sodium.crypto_aead_xchacha20poly1305_ietf_KEYBYTES} bytes (got ${key.length}).`,
     );
   }
   cachedMasterKey = key;
@@ -108,7 +108,7 @@ export async function decryptForUser(userId: string, ciphertext: Ciphertext): Pr
   await ready();
   const parts = ciphertext.split('.');
   if (parts.length !== 3 || parts[0] !== TEXT_VERSION) {
-    throw new Error(`@workerapp/shared/crypto: malformed/unsupported ciphertext`);
+    throw new Error(`@workerchat/shared/crypto: malformed/unsupported ciphertext`);
   }
   const nonce = unb64(parts[1] as string);
   const ct = unb64(parts[2] as string);
@@ -130,7 +130,7 @@ export async function encryptJsonForUser(userId: string, value: Json): Promise<E
 export async function decryptJsonForUser(userId: string, envelope: EncryptedEnvelope): Promise<Json> {
   const enc = (envelope as { enc?: unknown }).enc;
   if (typeof enc !== 'string') {
-    throw new Error('@workerapp/shared/crypto: malformed json envelope (missing enc)');
+    throw new Error('@workerchat/shared/crypto: malformed json envelope (missing enc)');
   }
   return JSON.parse(await decryptForUser(userId, enc)) as Json;
 }
@@ -169,7 +169,7 @@ export async function unwrapDEK(wrapped: EncryptedEnvelope, kek: KeyBytes): Prom
   await ready();
   const w = wrapped as { v?: unknown; n?: unknown; ct?: unknown };
   if (w.v !== ENVELOPE_VERSION || typeof w.n !== 'string' || typeof w.ct !== 'string') {
-    throw new Error('@workerapp/shared/crypto: malformed DEK envelope');
+    throw new Error('@workerchat/shared/crypto: malformed DEK envelope');
   }
   return sodium.crypto_secretbox_open_easy(unb64(w.ct), unb64(w.n), kek);
 }

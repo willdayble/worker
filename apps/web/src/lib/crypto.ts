@@ -9,7 +9,7 @@ export {
   encryptJsonForUser,
   decryptJsonForUser,
   hmacIdentifier,
-} from '@workerapp/shared';
+} from '@workerchat/shared';
 
 /** Decrypt, swallowing failures to a fallback so one bad row can't blank the inbox. */
 export async function safeDecrypt(

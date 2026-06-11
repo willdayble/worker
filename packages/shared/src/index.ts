@@ -1,5 +1,5 @@
 // ============================================================================
-// @workerapp/shared — Track B platform contract (Deliverable 0a).
+// @workerchat/shared — Track B platform contract (Deliverable 0a).
 //
 //   • messaging/  MessagingProvider interface + payload types (CONTRACTS §2)
 //   • db/         DB row types — 1a channel contract + 1b rich CRM (CONTRACTS §3)
@@ -10,7 +10,7 @@
 // functions (its own Encryptor PORT adapts over them). The CRM imports types,
 // validators, and (in 0b) crypto. Neither imports a provider chat SDK.
 //
-// Subpath imports also work: `@workerapp/shared/messaging`, `/db`, `/validation`,
+// Subpath imports also work: `@workerchat/shared/messaging`, `/db`, `/validation`,
 // `/crypto`.
 // ============================================================================
 

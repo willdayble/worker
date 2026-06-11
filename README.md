@@ -1,4 +1,4 @@
-# WorkerApp
+# WorkerChat
 
 A privacy-first, channel-agnostic CRM and client-comms tool for independent service
 providers. Workers connect a messaging channel (WhatsApp first, Telegram in parallel),

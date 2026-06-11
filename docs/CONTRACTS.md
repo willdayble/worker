@@ -1,4 +1,4 @@
-# WorkerApp — Frozen Contracts (v0.2)
+# WorkerChat — Frozen Contracts (v0.2)
 
 *These interfaces decouple the three tracks so they can build in parallel. **Changing any
 contract requires editing this file and notifying the other tracks via the orchestrator.***
@@ -19,7 +19,7 @@ Pseudocode is TypeScript-flavored; Track B owns the canonical definitions in
 |---|---|---|
 | `apps/worker/**` (incl. `apps/worker/src/messaging/adapters/**`) | **Track A** | read |
 | `apps/web/**` | **Track B** | read |
-| `packages/shared/**` (interface, types, schema, zod, crypto, **its `package.json`/`tsconfig.json`/`src/index.ts`**) | **Track B** | read; A imports via `@workerapp/shared` |
+| `packages/shared/**` (interface, types, schema, zod, crypto, **its `package.json`/`tsconfig.json`/`src/index.ts`**) | **Track B** | read; A imports via `@workerchat/shared` |
 | `supabase/migrations/**` | **Track B** | read |
 | `docs/killtest/**` | **Track A** | orchestrator + C read |
 | `docs/site/**` | **Track C** | read |
@@ -28,7 +28,7 @@ Pseudocode is TypeScript-flavored; Track B owns the canonical definitions in
 
 **Structural rules that make the partition clean (red-team C1–C3):**
 - **Messaging adapters live in `apps/worker/src/messaging/adapters/**` (Track A), NOT in
-  `packages/shared`.** They import the interface from `@workerapp/shared`. This makes
+  `packages/shared`.** They import the interface from `@workerchat/shared`. This makes
   `packages/shared` wholly Track B and prevents a provider chat SDK from leaking into `apps/web`.
 - **Provider SDKs (Baileys, grammY/telegraf, libsodium-for-adapters) are declared only in
   `apps/worker/package.json`** — never a dependency of `packages/shared`.
@@ -147,7 +147,7 @@ interface MessagingProvider {
 ```
 
 **Interface-change protocol (red-team M4):** an adapter that discovers a missing field files
-an orchestrator request; **Track B** edits `interface.ts` and bumps the `@workerapp/shared`
+an orchestrator request; **Track B** edits `interface.ts` and bumps the `@workerchat/shared`
 version; Track A pins to the new version. Track A must not edit `interface.ts`, even transiently.
 
 **Capability-driven UI:** Track B reads `capabilities` (surfaced via `channels.capabilities`)
@@ -339,7 +339,7 @@ workerapp/
   apps/
     web/         # Next.js + TS (Vercel). CRM UI + AI-assist + connect screens. NEVER imports a chat SDK.
     worker/      # Always-on Node (Fly.io/Railway) + BullMQ/Redis. Holds sessions. (Track A)
-      src/messaging/adapters/   # Telegram / WhatsAppOfficial / WhatsAppUnofficial — import @workerapp/shared
+      src/messaging/adapters/   # Telegram / WhatsAppOfficial / WhatsAppUnofficial — import @workerchat/shared
   packages/
     shared/      # types, DB schema, zod, crypto (libsodium), MessagingProvider INTERFACE. No provider SDKs.
   supabase/migrations/   # RLS-first schema (no WITH CHECK (true))

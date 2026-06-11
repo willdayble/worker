@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex h-screen">
       <nav className="flex w-56 shrink-0 flex-col border-r border-border p-3">
-        <div className="px-2 py-3 text-sm font-semibold">WorkerApp</div>
+        <div className="px-2 py-3 text-sm font-semibold">WorkerChat</div>
         <div className="flex flex-1 flex-col gap-1">
           <NavLink href="/inbox" icon={<Inbox size={16} />} label="Inbox" />
           <NavLink href="/contacts" icon={<Users size={16} />} label="Contacts" />

@@ -27,7 +27,7 @@ const SECURITY_HEADERS = [
 ] as const;
 
 const nextConfig: NextConfig = {
-  // @workerapp/shared ships built JS in dist; no transpile needed. The CRM must
+  // @workerchat/shared ships built JS in dist; no transpile needed. The CRM must
   // never pull a provider chat SDK (CONTRACTS §1) — shared has none.
   async headers() {
     return [

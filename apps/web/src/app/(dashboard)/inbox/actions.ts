@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { encryptForUser, hmacIdentifier } from '@/lib/crypto';
-import type { Channel } from '@workerapp/shared';
+import type { Channel } from '@workerchat/shared';
 
 export interface StageResult {
   ok: boolean;

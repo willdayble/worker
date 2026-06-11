@@ -1,8 +1,8 @@
 {
-  "name": "@workerapp/web",
+  "name": "@workerchat/web",
   "version": "0.0.0",
   "private": true,
-  "description": "WorkerApp CRM (Track B). Next.js 16 App Router. Imports @workerapp/shared; NEVER a provider chat SDK (CONTRACTS §1).",
+  "description": "WorkerChat CRM (Track B). Next.js 16 App Router. Imports @workerchat/shared; NEVER a provider chat SDK (CONTRACTS §1).",
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
-    "@workerapp/shared": "workspace:*",
+    "@workerchat/shared": "workspace:*",
     "clsx": "^2.1.1",
     "date-fns": "^4.3.0",
     "lucide-react": "^0.460.0",
