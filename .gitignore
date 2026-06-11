@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+
+# Builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env & secrets — NEVER commit. Real values live only in Doppler (project: worker).
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+secrets/
+# ...but keep the no-value templates
+!.env.example
+!**/.env.example
+
+# Reference project — contains the previous builder's LIVE secrets in plaintext
+# (markdown + .env backups). Keep it local-only; it must never reach GitHub.
+first_attempt/
+
+# Doppler: machine-level auth lives in ~/.doppler (never in-repo).
+# doppler.yaml (project/config link, no secrets) IS committed on purpose.
+
+# OS / editor / misc
+.DS_Store
+*.log
+npm-debug.log*
+.vercel/
+coverage/
+.turbo/

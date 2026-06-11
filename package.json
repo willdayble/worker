@@ -1,0 +1,14 @@
+{
+  "name": "workerapp",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Privacy-first, channel-agnostic CRM + client comms for independent service providers.",
+  "scripts": {
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "secrets:scan": "gitleaks detect --no-banner --redact",
+    "check:rls": "bash scripts/check-rls.sh",
+    "prepare": "command -v lefthook >/dev/null 2>&1 && lefthook install || echo 'lefthook not installed — run: brew install lefthook gitleaks'"
+  }
+}

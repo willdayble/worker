@@ -1,0 +1,5 @@
+# Links this repo to the Doppler project/config. No secrets here — safe to commit.
+# After `doppler login`, run `doppler run -- <command>` to inject secrets at runtime.
+setup:
+  project: worker
+  config: dev

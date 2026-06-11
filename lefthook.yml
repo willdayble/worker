@@ -1,0 +1,11 @@
+# Git hooks. One-time setup:  brew install lefthook gitleaks  &&  lefthook install
+# (pnpm's "prepare" script runs `lefthook install` automatically after install.)
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      # Blocks a commit if a secret is staged — the net that would have caught the prior leak.
+      run: gitleaks protect --staged --no-banner --redact
+    rls-guard:
+      # Blocks permissive RLS (WITH CHECK (true) / USING (true)) — see CONTRACTS §5.
+      run: bash scripts/check-rls.sh
