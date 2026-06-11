@@ -1,0 +1,44 @@
+{
+  "name": "@workerapp/shared",
+  "version": "0.1.0-0a",
+  "private": true,
+  "description": "Track B platform contract: MessagingProvider interface, DB row types, zod validators, crypto helpers. Imported by apps/web (B) and apps/worker (A). NEVER depends on a provider chat SDK (CONTRACTS §1).",
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./messaging": {
+      "types": "./dist/messaging/interface.d.ts",
+      "import": "./dist/messaging/interface.js"
+    },
+    "./db": {
+      "types": "./dist/db/types.d.ts",
+      "import": "./dist/db/types.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/schemas.d.ts",
+      "import": "./dist/validation/schemas.js"
+    },
+    "./crypto": {
+      "types": "./dist/crypto/index.d.ts",
+      "import": "./dist/crypto/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

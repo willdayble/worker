@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "description": "Privacy-first, channel-agnostic CRM + client comms for independent service providers.",
   "scripts": {
+    "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
