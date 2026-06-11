@@ -29,7 +29,7 @@ human-approved outbound (CONTRACTS §3–4).
   can build. **0b** = real libsodium crypto impls (envelope encryption, per-user DEK). **No
   provider SDKs in `packages/shared/package.json`.**
 
-## Deliverable 1: schema + RLS (mine `first_attempt/wacrm/supabase/migrations`)
+## Deliverable 1: schema + RLS (mine `../first_attempt/wacrm/supabase/migrations`)
 
 **Split for parallelism:** **1a** = the minimum channel contract (`channels`, `contacts`,
 `contact_channels`, `conversations`, `messages`, `bridge_outbound`, `acquisition_sources`,
@@ -74,7 +74,7 @@ auto-block.** Disclosed assistant. Haiku for per-message; Sonnet/Opus for drafti
 system prompt; Batch API for backfill.
 
 ## Constraints / gotchas
-- **Next.js 16** (App Router, Turbopack) — `first_attempt/wacrm/AGENTS.md` warns it differs
+- **Next.js 16** (App Router, Turbopack) — `../first_attempt/wacrm/AGENTS.md` warns it differs
   from training data; check `node_modules/next/dist/docs/` before writing.
 - CRM imports **no** provider SDK; talks to channels only through the DB/queue contract.
 - Encryption boundary per CONTRACTS §5 — sensitive free-text + bodies are `*_enc`.

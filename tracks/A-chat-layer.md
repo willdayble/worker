@@ -53,12 +53,12 @@ Three adapters:
    `smb_message_echoes` for the worker's own-device messages), media download, 24h-window
    state + template send when closed.
 3. **`WhatsAppUnofficialProvider`** — Baileys, **isolated**, fallback-only. Port the working
-   parts of `first_attempt/whatsapp-bridge/server.js` (Supabase auth-state persistence is
+   parts of `../first_attempt/whatsapp-bridge/server.js` (Supabase auth-state persistence is
    solid) but **fix what's broken/missing:** the `requestPairingCode()` hang (newer WA forces
    "link with phone" — research current Baileys pairing flow), **media download** (prior build
    stored `[image]` placeholders), and **history capture**.
 
-## What to reuse from `first_attempt/whatsapp-bridge`
+## What to reuse from `../first_attempt/whatsapp-bridge`
 - ✅ Supabase Baileys auth-state *logic* (`makeSupabaseAuthState`), outbox polling, reconnect —
   but **re-point it** to the new `wa_auth_state` table (the old `wa_sessions`/`bridge_queue`
   names belong to the abandoned project; coordinate names with Track B).

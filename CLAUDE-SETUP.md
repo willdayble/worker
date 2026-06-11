@@ -182,10 +182,10 @@ Bring cross-track decisions, conflicts, and "is this right?" back to the orchest
 **secret values** (they live in the Doppler cloud, not the folder — you get the *structure*, not
 the secrets).
 
-> 🔴 **SECURITY — read before zipping/sending to anyone:** this folder contains
-> **`first_attempt/`**, the previous builder's earlier prototype, which has **live-ish leaked
-> secrets** in it — `.env.*` backups (service keys, an encryption key) and a Supabase **Personal
-> Access Token** hardcoded in `first_attempt/wacrm/ONBOARDING.md`. A raw zip of this folder
-> **includes those**. Before handing the zip to anyone, either confirm the previous builder has
-> **rotated** those credentials (see `SECURITY-ACTIONS.md`) or **delete/scrub** the secret files
-> from `first_attempt/`. (Our *own* setup keeps no secrets in the folder — they're all in Doppler.)
+> ✅ **The zip is secret-clean by structure.** This repo is the `app/` folder of a larger parent
+> (`workerapp/app/`). The previous builder's old prototype — which holds leaked secrets (`.env.*`
+> backups + a Supabase Personal Access Token in `wacrm/ONBOARDING.md`) — lives in a **sibling**
+> folder, `../first_attempt/`, **outside this repo**. So a zip of *this* folder does **not**
+> include it, and contains no live secrets (ours all live in Doppler, never in the folder). *(For
+> the maintainer: those old credentials should still be rotated by the previous builder — see
+> `SECURITY-ACTIONS.md` — but they are not in this zip and not Clare's concern.)*

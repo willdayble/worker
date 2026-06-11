@@ -159,7 +159,7 @@ No channel-specific branching in CRM logic beyond capabilities.
 
 ## 3. Database schema contract (channel-agnostic)
 
-Track B owns migrations. Track A conforms. Mine `first_attempt/wacrm/supabase/migrations/`
+Track B owns migrations. Track A conforms. Mine `../first_attempt/wacrm/supabase/migrations/`
 for the rich CRM columns — **but fix its RLS holes** (see §5). Split delivery:
 - **Deliverable 1a (apply immediately, unblocks A):** the minimum channel contract below —
   `channels`, `contacts`, `contact_channels`, `conversations`, `messages`, `bridge_outbound`,
