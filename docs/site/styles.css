@@ -1,5 +1,5 @@
 /* ===========================================================================
-   WorkerApp — Investor Scoping Site (Track C)
+   WorkerChat — Investor Scoping Site (Track C)
    One shared stylesheet for all seven static pages. No build step, no runtime
    dependency beyond the Mermaid CDN script each page loads for itself.
    Design goals: calm, neutral, "privacy-first utility" — never sales-y, never
