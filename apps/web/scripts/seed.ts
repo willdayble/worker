@@ -1,7 +1,7 @@
 /**
  * Dev seed — gives the inbox realistic data once migrations 0001/0002 are applied.
  *
- * Run:  doppler run -- pnpm --filter @workerapp/web seed
+ * Run:  doppler run -- pnpm --filter @workerchat/web seed
  * Needs: SUPABASE_URL + SUPABASE_SECRET_KEY (service role) + WORKER_MASTER_KEY
  *        (same key the CRM decrypts with, so seeded ciphertext round-trips).
  *
@@ -9,9 +9,9 @@
  * are encrypted with the shared crypto before insert (CONTRACTS §5) — never plaintext.
  */
 import { createClient } from '@supabase/supabase-js';
-import { encryptForUser } from '@workerapp/shared';
+import { encryptForUser } from '@workerchat/shared';
 
-const SEED_EMAIL = process.env.SEED_EMAIL ?? 'demo@workerapp.local';
+const SEED_EMAIL = process.env.SEED_EMAIL ?? 'demo@workerchat.local';
 const SEED_PASSWORD = process.env.SEED_PASSWORD ?? 'workerapp-demo-pw';
 const CHANNEL = 'telegram';
 const CHANNEL_USER_ID = '610000001';
@@ -122,6 +122,33 @@ async function main() {
   }
 
   console.log(`seed: created conversation ${conversationId} with ${script.length} messages.`);
+
+  // 6. a default pipeline + stages + one open deal, so the kanban has data.
+  const pipeline = await supabase
+    .from('pipelines')
+    .insert({ user_id: uid, name: 'Bookings', is_default: true })
+    .select('id')
+    .single();
+  const stageRows = ['Enquiry', 'Screening', 'Confirmed', 'Completed'].map((name, i) => ({
+    pipeline_id: pipeline.data!.id,
+    user_id: uid,
+    name,
+    position: i,
+  }));
+  const stages = await supabase.from('pipeline_stages').insert(stageRows).select('id, name');
+  const screening = stages.data?.find((s) => s.name === 'Screening');
+  await supabase.from('deals').insert({
+    user_id: uid,
+    contact_id: contactId,
+    conversation_id: conversationId,
+    pipeline_id: pipeline.data!.id,
+    stage_id: screening?.id,
+    service_label: 'Friday evening — 1hr',
+    fee_amount: 350,
+    status: 'open',
+    scheduled_date: '2026-06-13',
+  });
+  console.log('seed: created pipeline + 1 open deal.');
 }
 
 main().catch((e) => {
