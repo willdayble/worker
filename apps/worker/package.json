@@ -1,0 +1,25 @@
+{
+  "name": "@workerchat/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Always-on messaging worker (Track A): holds channel sessions, ingests inbound, sends human-approved outbound. Never serverless.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.45.4",
+    "@workerchat/shared": "workspace:*",
+    "grammy": "1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.9.0",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.5"
+  }
+}

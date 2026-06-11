@@ -1,0 +1,55 @@
+# WhatsApp survivability kill-test — UNOFFICIAL lane bridge (WAHA self-host)
+#
+# This is an OFF-THE-SHELF bridge. We do NOT write Baileys session code anywhere
+# in this repo (SCOPE §2: unofficial = scoped fallback / kill-test only). WAHA wraps
+# the Baileys engine for us; the harness only drives/monitors it over HTTP.
+#
+# WAHA self-host is preferred over hosted alternatives (Whapi.cloud / GreenAPI) for
+# DATA SOVEREIGNTY — the throwaway number's session stays on the operator's machine.
+# AVOID GreenAPI for any real data (community-flagged Russia-linked; see brief).
+#
+# ── SUPPLY-CHAIN (SCOPE §7: Baileys / lotusbail poisoned-fork risk) ───────────────
+# The image tag below is PINNED, never `latest`. Before bringing this up you MUST
+# review the tag: confirm the digest against devlikeapro's published releases and
+# that it bundles a known-good Baileys (not a poisoned fork like Dec-2025 lotusbail).
+# Re-review on every bump. Treat an unreviewed bump as a blocker.
+# ─────────────────────────────────────────────────────────────────────────────────
+
+services:
+  waha:
+    # PINNED tag — Core (free) WEBJS image at a fixed version. (WEBJS = whatsapp-web.js,
+    # NOT Baileys — so the lotusbail/Baileys supply-chain risk is for the NOWEB engine, not this.)
+    # Orchestrator re-pin 2026-06-11: the previous `2024.12.3` tag DID NOT EXIST on Docker Hub
+    # (zero 2024.12.* tags) and would fail to pull. `latest-2026.5.1` is the current verified
+    # Core WEBJS tag (published 2026-05-26). TODO(Track A): digest-pin once Docker is installed:
+    #   docker buildx imagetools inspect devlikeapro/waha:latest-2026.5.1   # then append @sha256:<digest>
+    image: devlikeapro/waha:latest-2026.5.1
+    container_name: killtest-waha
+    restart: unless-stopped
+    ports:
+      # WAHA REST API on localhost only. monitor.mjs talks to http://localhost:3000.
+      - "127.0.0.1:3000:3000"
+    environment:
+      # API key gate. Set the real value in .env (gitignored); NEVER commit it.
+      # WAHA hashes this; here we pass it through from the operator's env.
+      - WAHA_API_KEY=${WAHA_API_KEY:-}
+      # Single default session is enough for one throwaway number.
+      - WHATSAPP_DEFAULT_ENGINE=WEBJS
+      # Keep WAHA's own logs at info; it must not log message bodies to our sinks.
+      - WAHA_LOG_LEVEL=info
+    volumes:
+      # Persist the session so a restart is a reconnect, not a fresh pair —
+      # this lets the kill-test measure reconnect behaviour over weeks.
+      - waha-sessions:/app/.sessions
+    healthcheck:
+      # WAHA exposes an unauthenticated health endpoint. If this goes unhealthy
+      # the monitor will read it as a connectivity/error condition, not a ban.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  waha-sessions:
+    name: killtest-waha-sessions
