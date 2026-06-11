@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>WorkerChat — Build Status</title>
+<meta name="description" content="Where the WorkerChat build is up to, at a glance: the three layers, what's built, what's in progress, what's left, and any open blockers.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">Worker<span>Chat</span></a>
+    <div class="nav-links">
+      <a href="index.html">Overview</a>
+      <a href="infrastructure.html">Infrastructure</a>
+      <a href="app.html">The App</a>
+      <a href="chat.html">Chat Layer</a>
+      <a href="technical.html">Technical</a>
+      <a href="scaling.html">Scaling</a>
+      <a href="costs.html">Costs</a>
+      <a href="status.html" class="active">Status</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wide">
+  <p class="eyebrow">Build status</p>
+  <h1>Where the build is up to.</h1>
+  <p class="lede">A quick read on how far through the build we are, by the three layers of the app.
+  Most of the pieces are built; the main thing between here and a first real test user is getting the
+  database live. There are no fatal problems so far.</p>
+  <p class="asof">Snapshot as of <strong>11 June 2026</strong> · updated by hand, so treat it as a
+  recent-but-not-live picture.</p>
+</header>
+
+<main class="wrap wide">
+
+  <div class="legend">
+    <span><i class="dot done"></i> Built</span>
+    <span><i class="dot prog"></i> In progress</span>
+    <span><i class="dot next"></i> To do</span>
+    <span><i class="dot block"></i> Blocked — waiting on an outside step</span>
+  </div>
+
+  <div class="status-grid">
+
+    <!-- ============ LAYER 1 — CHAT ============ -->
+    <section class="layer">
+      <div class="layer-head">
+        <div class="n">Layer 1</div>
+        <h3>Chat / channels</h3>
+        <div class="role">The always-on worker that holds the live WhatsApp &amp; Telegram connections.</div>
+        <div class="bar"><i class="b-done" style="width:62%"></i><i class="b-prog" style="width:13%"></i></div>
+        <div class="bar-key"><b>5 built</b> · 1 in progress · 2 to go</div>
+      </div>
+      <ul class="ms-list">
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">One swappable channel interface</div>
+          <div class="ms-sub">WhatsApp / Telegram / Signal-later all behind a single interface.</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Telegram channel</div>
+          <div class="ms-sub">Built and round-trip tested (the zero-ban-risk path).</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">WhatsApp official (Cloud API + Coexistence)</div>
+          <div class="ms-sub">Built and tested, incl. the 24-hour-window handling.</div></div></li>
+        <li class="ms"><i class="dot prog"></i><div class="ms-main">
+          <div class="ms-label">WhatsApp unofficial (fallback)</div>
+          <div class="ms-sub">Built, but switched off until the survivability test gives a verdict.</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Worker runtime — encrypted ingest + approved send</div>
+          <div class="ms-sub">Tests pass in isolation; not yet committed/deployed (see Layer&nbsp;3).</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Kill-test harness</div>
+          <div class="ms-sub">Self-test passes. Ready to run the real experiment.</div></div></li>
+        <li class="ms"><i class="dot next"></i><div class="ms-main">
+          <div class="ms-label">Deploy the worker to always-on hosting</div>
+          <div class="ms-sub">Wire it to the live database for real round-trips.</div></div></li>
+        <li class="ms is-block"><i class="dot block"></i><div class="ms-main">
+          <div class="ms-label">Survivability verdict (the kill-test)</div>
+          <div class="ms-sub">Needs a person + a throwaway SIM, ~2–4 weeks. Not started.</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ============ LAYER 2 — APP / CRM ============ -->
+    <section class="layer">
+      <div class="layer-head">
+        <div class="n">Layer 2</div>
+        <h3>The app (CRM)</h3>
+        <div class="role">The web app the worker uses: inbox, contacts, bookings, AI assist.</div>
+        <div class="bar"><i class="b-done" style="width:56%"></i><i class="b-prog" style="width:11%"></i></div>
+        <div class="bar-key"><b>5 built</b> · 1 in progress · 3 to go</div>
+      </div>
+      <ul class="ms-list">
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Accounts &amp; login</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Inbox</div>
+          <div class="ms-sub">Conversation list, thread, and a composer that only sends after the worker approves.</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Contacts</div>
+          <div class="ms-sub">Profiles, screening, and the advisory dangerous-client flag (with an audit trail).</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Pipeline + booking close-loop</div>
+          <div class="ms-sub">Enquiry → screening → confirmed → won / lost / time-waster / dangerous.</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">AI assist</div>
+          <div class="ms-sub">Drafts replies and spots bookings/flags — the worker approves everything.</div></div></li>
+        <li class="ms"><i class="dot prog"></i><div class="ms-main">
+          <div class="ms-label">Where-clients-came-from attribution</div>
+          <div class="ms-sub">Stored in the data model; the screen for it is in progress.</div></div></li>
+        <li class="ms"><i class="dot next"></i><div class="ms-main">
+          <div class="ms-label">Connect-a-channel screen</div>
+          <div class="ms-sub">The QR / pairing flow to link WhatsApp or Telegram.</div></div></li>
+        <li class="ms"><i class="dot next"></i><div class="ms-main">
+          <div class="ms-label">Cross-user dashboards</div>
+          <div class="ms-sub">Sources, conversion, time-to-book (test phase, with consent).</div></div></li>
+        <li class="ms"><i class="dot next"></i><div class="ms-main">
+          <div class="ms-label">Calendar &amp; services menu</div></div></li>
+      </ul>
+    </section>
+
+    <!-- ============ LAYER 3 — INFRASTRUCTURE ============ -->
+    <section class="layer">
+      <div class="layer-head">
+        <div class="n">Layer 3</div>
+        <h3>Infrastructure / data</h3>
+        <div class="role">Encrypted storage and the plumbing the other two layers stand on.</div>
+        <div class="bar"><i class="b-done" style="width:57%"></i><i class="b-prog" style="width:0%"></i></div>
+        <div class="bar-key"><b>4 built</b> · 2 blocked · 1 roadmap</div>
+      </div>
+      <ul class="ms-list">
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Monorepo, CI &amp; security guardrails</div>
+          <div class="ms-sub">Secret-leak scanning, the database deny-by-default check, secret deny-rules.</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Shared types + channel interface<span class="ver">v0.3.0</span></div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Encryption at rest</div>
+          <div class="ms-sub">libsodium, a separate key per user. (Zero-knowledge is still roadmap — see below.)</div></div></li>
+        <li class="ms"><i class="dot done"></i><div class="ms-main">
+          <div class="ms-label">Database schema + access rules</div>
+          <div class="ms-sub">Channels, contacts, conversations, messages, bookings — written as 3 migrations.</div></div></li>
+        <li class="ms is-block"><i class="dot block"></i><div class="ms-main">
+          <div class="ms-label">Apply the schema to the live database</div>
+          <div class="ms-sub">A connectivity snag; needs applying via the Supabase dashboard.</div></div></li>
+        <li class="ms is-block"><i class="dot block"></i><div class="ms-main">
+          <div class="ms-label">Encryption master key in the secrets manager</div>
+          <div class="ms-sub">One value to add to Doppler before the worker can decrypt in production.</div></div></li>
+        <li class="ms"><i class="dot next"></i><div class="ms-main">
+          <div class="ms-label">Client-side end-to-end encryption</div>
+          <div class="ms-sub">Roadmap, after the prototype. The columns are designed to migrate to it.</div></div></li>
+      </ul>
+    </section>
+
+  </div>
+
+  <p class="src">Status traced to the repo: <code>tracks/</code> briefs, the git history,
+  <code>packages/shared</code> v0.3.0, the three <code>supabase/migrations</code>, and
+  <code>docs/killtest/results.md</code> (verdict pending). It's hand-maintained, so it can lag the
+  code by a little.</p>
+
+  <h2 id="issues">Open questions &amp; blockers</h2>
+  <p>Formal user testing hasn't started yet — that's gated on getting the database live — so these
+  aren't bugs found by testers. They're the known questions and blockers that could slow or reshape
+  the build. <strong>None of them is a dead-end.</strong></p>
+
+  <div class="issues">
+
+    <div class="issue sev-high">
+      <span class="sev">High</span>
+      <h4>WhatsApp Coexistence may not be available in Australia</h4>
+      <p>The durable official WhatsApp path is commonly switched off in AU (and the UK/EU). If it's
+      unavailable for the real user's region, that lane won't work there and we lean on Telegram plus
+      the official path in regions that do support it. It needs a live check.</p>
+      <p class="meta">Open question · checked as part of the kill-test's official lane · shapes the
+      channel strategy for AU users, not the product as a whole.</p>
+    </div>
+
+    <div class="issue sev-high">
+      <span class="sev">High</span>
+      <h4>The database isn't live yet</h4>
+      <p>The schema and access rules are written but not yet applied to the live database (a network
+      snag), and the encryption master key isn't in the secrets manager. Until both are done, nothing
+      runs end-to-end against real data — so real test users can't onboard. Both are ops steps, not
+      redesigns.</p>
+      <p class="meta">Blocker for the next phase · solvable via the Supabase dashboard + one secret to
+      add · this is the main thing standing between "built" and "first real test user".</p>
+    </div>
+
+    <div class="issue sev-med">
+      <span class="sev">Medium</span>
+      <h4>Unofficial WhatsApp survivability is still unverified</h4>
+      <p>The two-to-four-week ban test needs a person with a throwaway SIM, and it hasn't been run, so
+      we don't yet know if the Baileys fallback is worth keeping. This only affects the fallback —
+      Telegram and the official path don't depend on it.</p>
+      <p class="meta">Not dev-stopping · the harness is built and ready to run.</p>
+    </div>
+
+    <div class="issue sev-med">
+      <span class="sev">Medium</span>
+      <h4>The channel worker isn't deployed yet</h4>
+      <p>It's built and its tests pass on their own, but it hasn't been committed, deployed, or wired
+      to the live database, so the inbox isn't receiving real messages yet. It's waiting on the
+      database going live (above).</p>
+      <p class="meta">Integration step · follows directly from the database blocker.</p>
+    </div>
+
+    <div class="issue sev-low">
+      <span class="sev">Good</span>
+      <h4>No fatal problems so far</h4>
+      <p>Worth saying plainly: nothing found so far stops the build. The design is deliberately
+      decoupled, so even the worst case — a WhatsApp number getting banned — costs a channel, not the
+      client list, the safety flags, or the bookings. The current blockers are setup and availability
+      steps, not architectural dead-ends.</p>
+    </div>
+
+  </div>
+
+  <div class="pager">
+    <a href="costs.html"><small>Back</small>← Costs</a>
+    <a class="nxt" href="index.html"><small>Back to start</small>Overview →</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p><strong>WorkerChat</strong> — investor scoping site. Build status is a hand-maintained snapshot
+    (11 June 2026) traced to the repo and <code>docs/killtest/results.md</code>; it can lag the code.</p>
+  </div>
+</footer>
+
+</body>
+</html>

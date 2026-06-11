@@ -395,7 +395,84 @@ footer.site a { color: var(--ink-soft); }
   .nav, .pager { display: none; }
   body { background: #fff; color: #1b2330; font-size: 12px; }
   h1, h2, h3, strong { color: #11161f; }
-  .card, .callout, .stat, .diagram, details.tech, table, .toc { background: #fff; }
+  .card, .callout, .stat, .diagram, details.tech, table, .toc, .layer, .issue { background: #fff; }
   details.tech { break-inside: avoid; }
   details.tech[open] > summary::before { content: ""; }
 }
+
+/* ---------- Status page -------------------------------------------------- */
+/* The status page runs a touch wider so the three-layer grid is comfortable.
+   max-width only — shrinks on small screens, so it can't cause overflow. */
+header.hero.wide, main.wrap.wide { max-width: 60rem; }
+
+/* Status legend (the key for the milestone dots) */
+.legend { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; margin: 1.4rem 0 0; font-size: .88rem; }
+.legend span { display: inline-flex; align-items: center; gap: .45rem; color: var(--ink-soft); }
+.dot { width: .7rem; height: .7rem; border-radius: 50%; flex: none; display: inline-block; }
+.dot.done  { background: var(--good); }
+.dot.prog  { background: var(--accent); }
+.dot.next  { background: var(--ink-faint); }
+.dot.block { background: var(--bad); }
+
+/* The three-layer grid — three columns side by side for an at-a-glance read,
+   stacking to one column on narrow screens. Stays inside the prose column (no
+   breakout) so it can never cause horizontal overflow. */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  margin: 1.6rem 0;
+  align-items: start;
+}
+@media (max-width: 46rem) {
+  .status-grid { grid-template-columns: 1fr; gap: 1rem; }
+}
+.layer {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.layer-head { padding: 1rem 1.1rem .85rem; border-bottom: 1px solid var(--line); }
+.layer-head .n { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--accent); }
+.layer-head h3 { margin: .15rem 0 .1rem; font-size: 1.12rem; }
+.layer-head .role { font-size: .82rem; color: var(--ink-faint); }
+
+/* Progress bar (filled = done; lighter = in progress) */
+.bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--paper-3); margin: .7rem 0 .45rem; }
+.bar i { display: block; height: 100%; }
+.bar .b-done { background: var(--good); }
+.bar .b-prog { background: var(--accent); }
+.bar-key { font-size: .8rem; color: var(--ink-soft); }
+.bar-key b { color: var(--ink); font-weight: 700; }
+
+/* Milestone rows */
+.ms-list { list-style: none; margin: 0; padding: .35rem .4rem .6rem; }
+.ms { display: flex; gap: .6rem; align-items: baseline; padding: .42rem .55rem; border-radius: 7px; }
+.ms + .ms { border-top: 1px solid var(--line); }
+.ms .dot { margin-top: .42rem; }
+.ms .ms-main { flex: 1; }
+.ms .ms-label { font-size: .94rem; }
+.ms .ms-sub { font-size: .8rem; color: var(--ink-faint); margin-top: .1rem; }
+.ms .ver { font-size: .68rem; font-weight: 700; color: var(--accent-dk); background: var(--accent-bg); border-radius: 4px; padding: .05rem .35rem; margin-left: .35rem; white-space: nowrap; }
+.ms.is-block .ms-label { color: var(--bad); }
+
+/* Open-issues list */
+.issues { margin: 1.4rem 0; display: grid; gap: .8rem; }
+.issue {
+  display: grid; grid-template-columns: auto 1fr; gap: .2rem .9rem;
+  background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--ink-faint);
+  border-radius: var(--radius); padding: .9rem 1.1rem; box-shadow: var(--shadow);
+}
+.issue.sev-high { border-left-color: var(--bad); }
+.issue.sev-med  { border-left-color: var(--warn); }
+.issue.sev-low  { border-left-color: var(--good); }
+.issue .sev { grid-row: 1 / span 2; align-self: start; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: .18rem .5rem; border-radius: 999px; height: max-content; white-space: nowrap; }
+.issue.sev-high .sev { background: var(--bad-bg); color: var(--bad); }
+.issue.sev-med  .sev { background: var(--warn-bg); color: var(--warn); }
+.issue.sev-low  .sev { background: var(--good-bg); color: var(--good); }
+.issue h4 { margin: 0; font-size: 1rem; }
+.issue p { margin: .2rem 0 0; font-size: .92rem; color: var(--ink-soft); }
+.issue .meta { font-size: .8rem; color: var(--ink-faint); margin-top: .35rem; }
+.asof { font-size: .82rem; color: var(--ink-faint); }
