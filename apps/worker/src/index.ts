@@ -9,7 +9,7 @@
 // NodeCryptoEncryptor = dev stand-in; prod swaps to shared's `KmsEncryptor` once shared-0a's
 // crypto dist is consistent (see core/crypto.ts header). Then: import from '@workerchat/shared/crypto'.
 import { createClient } from '@supabase/supabase-js';
-import { NodeCryptoEncryptor } from './core/crypto.js';
+import { NodeCryptoEncryptor, SharedEncryptor, type Encryptor } from './core/crypto.js';
 import { makeGrammyTransport } from './messaging/adapters/telegram-grammy.js';
 import { TelegramProvider } from './messaging/adapters/telegram.js';
 import { WhatsAppOfficialProvider } from './messaging/adapters/whatsapp-official.js';
@@ -26,12 +26,17 @@ type Stop = () => void | Promise<void>;
 
 async function main(): Promise<void> {
   const userId = process.env.DEV_USER_ID ?? 'dev-user-0';
-  const encryptor = new NodeCryptoEncryptor(); // dev stand-in; prod uses @workerchat/shared KmsEncryptor
+  // Prod (WORKER_MASTER_KEY set, e.g. via Doppler) → SharedEncryptor: SAME crypto + key as the CRM,
+  // so the inbox can decrypt what we write. Offline / no key (smoke tests) → ephemeral dev stand-in.
+  const encryptor: Encryptor = process.env.WORKER_MASTER_KEY
+    ? new SharedEncryptor()
+    : new NodeCryptoEncryptor();
 
   // SupabaseSink when creds are present (needs schema 1a applied to the live DB); else the
   // in-memory sink so a token-only smoke test still works.
   const supaUrl = process.env.SUPABASE_URL;
-  const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Accept either the legacy service-role name or Supabase's newer "secret key" name (in Doppler).
+  const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
   const sink: MessageSink = supaUrl && supaKey
     ? new SupabaseSink(createClient(supaUrl, supaKey, { auth: { persistSession: false } }), encryptor)
     : new InMemorySink(encryptor);

@@ -17,6 +17,9 @@
 import {
   createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes,
 } from 'node:crypto';
+// Production crypto comes from the SHARED package (same scheme + WORKER_MASTER_KEY as the CRM),
+// so worker-written ciphertext is decryptable in the inbox. See SharedEncryptor below.
+import { encryptForUser, decryptForUser, hmacIdentifier } from '@workerchat/shared';
 
 /**
  * The encryption boundary the worker depends on. Text/identifier values are encrypted before
@@ -70,6 +73,16 @@ export class NodeCryptoEncryptor implements Encryptor {
   async hmac(userId: string, value: string): Promise<string> {
     return createHmac('sha256', this.subkey(userId, 'mac')).update(value).digest('base64url');
   }
+}
+
+// PRODUCTION encryptor — thin adapter over @workerchat/shared's libsodium crypto
+// (XChaCha20-Poly1305, per-user BLAKE2b subkeys, 'v1x' format) reading WORKER_MASTER_KEY. This is
+// the SAME scheme + key the CRM (apps/web) uses to DECRYPT, so the inbox can read what the worker
+// writes. Use this whenever WORKER_MASTER_KEY is set (i.e. any real/deployed run).
+export class SharedEncryptor implements Encryptor {
+  encrypt(userId: string, plaintext: string): Promise<string> { return encryptForUser(userId, plaintext); }
+  decrypt(userId: string, ciphertext: string): Promise<string> { return decryptForUser(userId, ciphertext); }
+  hmac(userId: string, value: string): Promise<string> { return hmacIdentifier(userId, value); }
 }
 
 function loadDevMasterKey(): Buffer {
