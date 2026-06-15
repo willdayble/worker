@@ -14,6 +14,8 @@ import { makeGrammyTransport } from './messaging/adapters/telegram-grammy.js';
 import { TelegramProvider } from './messaging/adapters/telegram.js';
 import { WhatsAppOfficialProvider } from './messaging/adapters/whatsapp-official.js';
 import { makeCloudTransport } from './messaging/adapters/whatsapp-cloud-transport.js';
+import { WhatsAppUnofficialProvider } from './messaging/adapters/whatsapp-unofficial.js';
+import { isUnofficialWhatsAppEnabled } from './core/flags.js';
 import { EnvCredentialStore, EnvWhatsAppCredentialStore } from './core/credentials.js';
 import { InMemorySink, type MessageSink } from './core/sink.js';
 import { SupabaseSink } from './persistence/supabase-sink.js';
@@ -37,10 +39,12 @@ async function main(): Promise<void> {
   const supaUrl = process.env.SUPABASE_URL;
   // Accept either the legacy service-role name or Supabase's newer "secret key" name (in Doppler).
   const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-  const sink: MessageSink = supaUrl && supaKey
-    ? new SupabaseSink(createClient(supaUrl, supaKey, { auth: { persistSession: false } }), encryptor)
-    : new InMemorySink(encryptor);
-  log.info({ event: 'bootstrap.sink', reason: supaUrl && supaKey ? 'supabase' : 'in_memory' });
+  // One service_role client, reused by the sink AND the WhatsApp-unofficial session store.
+  const supabase = supaUrl && supaKey
+    ? createClient(supaUrl, supaKey, { auth: { persistSession: false } })
+    : null;
+  const sink: MessageSink = supabase ? new SupabaseSink(supabase, encryptor) : new InMemorySink(encryptor);
+  log.info({ event: 'bootstrap.sink', reason: supabase ? 'supabase' : 'in_memory' });
 
   const stops: Stop[] = [];
   let started = false;
@@ -93,6 +97,28 @@ async function main(): Promise<void> {
     stops.push(() => runtime.stop());
     started = true;
     log.info({ event: 'bootstrap.started', userId, channel: 'whatsapp_official', channelUserId: phoneNumberId });
+  }
+
+  // ── WhatsApp-unofficial (Baileys, linked device) ────────────────────────────────
+  // GATED: only starts when ENABLE_WHATSAPP_UNOFFICIAL=true (kill-test deferred per operator
+  // decision — see the adapter header). Needs the Supabase client for its encrypted session store;
+  // pairing uses WHATSAPP_PAIR_NUMBER (the digits of the number to link).
+  if (isUnofficialWhatsAppEnabled()) {
+    if (!supabase) {
+      log.warn({ event: 'bootstrap.whatsapp_unofficial.skipped', reason: 'no_supabase' });
+    } else {
+      const provider = new WhatsAppUnofficialProvider({
+        sb: supabase,
+        encryptor,
+        writeChannelState: (uid, channel, patch) => sink.writeChannelState(uid, channel, patch),
+        pairNumber: process.env.WHATSAPP_PAIR_NUMBER,
+      });
+      const runtime = new SessionRuntime({ userId, provider, sink, encryptor });
+      await runtime.start();
+      stops.push(() => runtime.stop());
+      started = true;
+      log.info({ event: 'bootstrap.started', userId, channel: 'whatsapp_unofficial' });
+    }
   }
 
   if (!started) {

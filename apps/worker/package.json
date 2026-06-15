@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.45.4",
+    "@whiskeysockets/baileys": "6.7.18",
     "@workerchat/shared": "workspace:*",
     "grammy": "1.30.0"
   },
