@@ -269,26 +269,35 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     let text: string | undefined;
     let attachments: InboundAttachment[] | undefined;
 
-    if (m.imageMessage) {
-      // Download the E2E-encrypted image, store it privately, attach the storage path. The CRM
-      // serves it via a short-lived signed URL. (Other media stays a placeholder for now.)
-      const path = await this.storeMedia(userId, sock, msg, providerMessageId, m.imageMessage.mimetype);
+    // Pick a downloadable media node (if any). All media uses the same Baileys download path; we
+    // just record the kind so the CRM renders it (image/sticker → <img>, video → <video>, audio/
+    // voice → <audio>, document → download link). Download failure falls back to a [kind] placeholder.
+    const media: { node: any; kind: InboundAttachment['kind'] } | null =
+      m.imageMessage ? { node: m.imageMessage, kind: 'image' }
+      : m.videoMessage ? { node: m.videoMessage, kind: 'video' }
+      : m.audioMessage ? { node: m.audioMessage, kind: 'audio' }
+      : m.documentMessage ? { node: m.documentMessage, kind: 'document' }
+      : m.stickerMessage ? { node: m.stickerMessage, kind: 'sticker' }
+      : null;
+
+    if (media) {
+      const path = await this.storeMedia(userId, sock, msg, providerMessageId, media.node.mimetype);
       if (path) {
-        attachments = [{ kind: 'image', mimeType: m.imageMessage.mimetype ?? 'image/jpeg', url: path }];
-        text = typeof m.imageMessage.caption === 'string' && m.imageMessage.caption ? m.imageMessage.caption : undefined;
+        attachments = [{ kind: media.kind, mimeType: media.node.mimetype ?? undefined, url: path }];
+        // Caption (image/video) or the file name (document) becomes the message body.
+        const cap =
+          media.kind === 'document'
+            ? media.node.caption || media.node.fileName || media.node.title
+            : media.node.caption;
+        text = typeof cap === 'string' && cap ? cap : undefined;
       } else {
-        text = '[image]'; // download failed → placeholder so the message still appears
+        text = `[${media.kind}]`;
       }
     } else {
       text =
         m.conversation ??
         m.extendedTextMessage?.text ??
-        (m.videoMessage ? (m.videoMessage.caption || '[video]')
-          : m.audioMessage ? '[audio]'
-          : m.documentMessage ? '[document]'
-          : m.stickerMessage ? '[sticker]'
-          : m.locationMessage ? '[location]'
-          : undefined);
+        (m.locationMessage ? '[location]' : undefined);
     }
     if (!text && !attachments) return null;
 
@@ -334,11 +343,11 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
         {},
         { logger: silentLogger, reuploadRequest: sock.updateMediaMessage },
       )) as Buffer;
-      const subtype = (mimetype ?? 'image/jpeg').split('/')[1]?.split(';')[0] ?? 'jpg';
+      const subtype = (mimetype ?? 'application/octet-stream').split('/')[1]?.split(';')[0] ?? 'bin';
       const path = `${userId}/${msgId}.${subtype}`;
       const { error } = await this.deps.sb.storage
         .from('inbound-media')
-        .upload(path, buffer, { contentType: mimetype ?? 'image/jpeg', upsert: true });
+        .upload(path, buffer, { contentType: mimetype ?? 'application/octet-stream', upsert: true });
       if (error) {
         log.error({ event: 'whatsapp.media.upload_failed', userId, channel: this.channel, errorCode: 'upload_error' });
         return null;

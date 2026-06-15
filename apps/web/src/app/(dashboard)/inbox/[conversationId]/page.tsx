@@ -53,12 +53,12 @@ export default async function ThreadPage({
   const messages = await Promise.all(
     (rows ?? []).map(async (m) => {
       const attachmentPath = m.attachment_url as string | null;
-      let imageUrl: string | null = null;
-      if (m.content_type === 'image' && attachmentPath) {
+      let mediaUrl: string | null = null;
+      if (attachmentPath) {
         const { data: signed } = await service.storage
           .from('inbound-media')
           .createSignedUrl(attachmentPath, 300);
-        imageUrl = signed?.signedUrl ?? null;
+        mediaUrl = signed?.signedUrl ?? null;
       }
       return {
         id: m.id as string,
@@ -66,8 +66,9 @@ export default async function ThreadPage({
         isHistorical: Boolean(m.is_historical),
         status: m.status as string,
         sentAt: m.sent_at as string,
+        contentType: m.content_type as string,
         body: await safeDecrypt(decryptForUser, user.id, m.body_enc as string | null),
-        imageUrl,
+        mediaUrl,
       };
     }),
   );
@@ -115,12 +116,30 @@ export default async function ThreadPage({
                   : 'bg-muted text-foreground',
               )}
             >
-              {m.imageUrl && (
+              {m.mediaUrl && (m.contentType === 'image' || m.contentType === 'sticker') && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.imageUrl} alt="attachment" className="mb-1 max-h-72 rounded-lg" />
+                <img src={m.mediaUrl} alt="attachment" className="mb-1 max-h-72 rounded-lg" />
               )}
-              {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
-              {!m.imageUrl && !m.body && <p>—</p>}
+              {m.mediaUrl && m.contentType === 'video' && (
+                <video src={m.mediaUrl} controls className="mb-1 max-h-72 rounded-lg" />
+              )}
+              {m.mediaUrl && m.contentType === 'audio' && (
+                <audio src={m.mediaUrl} controls className="mb-1 w-full" />
+              )}
+              {m.mediaUrl && m.contentType === 'document' && (
+                <a
+                  href={m.mediaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mb-1 block underline underline-offset-2"
+                >
+                  📎 {m.body || 'Document'}
+                </a>
+              )}
+              {m.body && m.contentType !== 'document' && (
+                <p className="whitespace-pre-wrap break-words">{m.body}</p>
+              )}
+              {!m.mediaUrl && !m.body && <p>—</p>}
               <div
                 className={cn(
                   'mt-1 flex items-center gap-1.5 text-[10px]',

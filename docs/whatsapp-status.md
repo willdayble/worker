@@ -46,7 +46,7 @@ WhatsApp  ──Baileys (linked device)──▶  worker adapter  ──normaliz
 | Area | Status | Notes |
 |---|---|---|
 | **Ban survivability** | **Deferred (the kill-test)** | Unofficial WhatsApp can be banned. The project has a documented kill-test (`docs/killtest/`) to measure this on throwaway numbers; it's intentionally **separate** from proving the bridge. **Do not point a number you can't lose at this yet.** |
-| **Media** | Not yet | Images/audio/docs show as `[image]` placeholders; download/upload deferred. Text is full-fidelity. |
+| **Inbound media** | ✅ images, video, audio/voice, documents | Downloaded + stored in a private bucket, served via short-lived signed URLs. NOT app-layer encrypted like message text yet (follow-up). Outbound media (CRM → WhatsApp) is still text-only. |
 | **History backfill** | Not yet | New messages onward only; no import of pre-existing history on pair. |
 | **Multi-user** | Not yet | Today: one worker per user. Production needs per-user worker sessions + a connect control-plane (the QR screen already models the UX). |
 | **Official Cloud API** | Built, not chosen | A Meta WhatsApp Business API adapter exists, but Meta's Business policy likely prohibits the use case (risk of account shutdown) and AU Coexistence availability is unconfirmed — hence the unofficial route. |
@@ -55,6 +55,6 @@ WhatsApp  ──Baileys (linked device)──▶  worker adapter  ──normaliz
 
 1. **Run the kill-test** (ban survivability) on throwaway numbers → GO/NO-GO on unofficial as a real
    channel.
-2. **Media + history** so threads are complete.
+2. **Outbound media + history backfill** (inbound media already works) so threads are complete both ways.
 3. **Multi-user**: per-user worker sessions + the in-CRM connect control-plane.
 4. Harden: reconnect/observability, outbound `claim_outbound` RPC (atomic), rate/abuse handling.
