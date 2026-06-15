@@ -108,8 +108,8 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
   readonly channel: Channel = 'whatsapp_unofficial';
 
   readonly capabilities: ProviderCapabilities = {
-    historySyncDays: 0,            // history backfill deferred (PoC)
-    historySyncMode: 'none',
+    historySyncDays: 0,            // depth depends on WhatsApp's sync; unknown
+    historySyncMode: 'bulk',       // WhatsApp pushes history on (re)pair (syncFullHistory)
     mediaSync: false,              // media download deferred (PoC: text + bracket placeholders)
     requires24hWindow: false,
     groups: false,
@@ -152,6 +152,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       logger: silentLogger,
       browser: ['WorkerChat', 'Chrome', '3.0'] as [string, string, string],
       markOnlineOnConnect: false,
+      syncFullHistory: true, // pull prior chats/messages on pair (ingested via messaging-history.set)
     });
     this.sessions.set(userId, { sock, state: 'connecting' });
     sock.ev.on('creds.update', saveCreds);
@@ -216,6 +217,26 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
           log.error({ event: 'whatsapp.inbound.failed', userId, channel: this.channel, errorCode: errorToken(err) });
         }
       }
+    });
+
+    // History backfill: WhatsApp pushes prior chats/messages on (re)connect — fuller on a fresh pair
+    // (syncFullHistory). Ingest them as historical so the CRM shows existing conversations/contacts.
+    // Idempotent (deduped by provider id); media isn't bulk-downloaded (placeholder) — see toInbound.
+    sock.ev.on('messaging-history.set', async (h: any) => {
+      const msgs: any[] = h?.messages ?? [];
+      let imported = 0;
+      for (const msg of msgs) {
+        try {
+          const norm = await this.toInbound(userId, sock, msg, { historical: true });
+          if (norm) {
+            await this.inboundHandler?.(norm);
+            imported++;
+          }
+        } catch (err) {
+          log.error({ event: 'whatsapp.history.failed', userId, channel: this.channel, errorCode: errorToken(err) });
+        }
+      }
+      log.info({ event: 'whatsapp.history.synced', userId, channel: this.channel, count: imported });
     });
 
     return { state: 'connecting' };
@@ -314,7 +335,12 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
   // ── internals ──────────────────────────────────────────────────────────────
 
   /** Map a Baileys message → channel-agnostic InboundMessage. Returns null to skip. */
-  private async toInbound(userId: string, sock: WASocketT, msg: any): Promise<InboundMessage | null> {
+  private async toInbound(
+    userId: string,
+    sock: WASocketT,
+    msg: any,
+    opts?: { historical?: boolean },
+  ): Promise<InboundMessage | null> {
     const jid: string | undefined = msg?.key?.remoteJid;
     if (!jid) return null;
     if (jid.endsWith('@g.us') || jid === 'status@broadcast' || jid.endsWith('@newsletter')) return null; // groups/status/channels: out of scope
@@ -361,17 +387,22 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       : null;
 
     if (media) {
-      const path = await this.storeMedia(userId, sock, msg, providerMessageId, media.node.mimetype);
-      if (path) {
-        attachments = [{ kind: media.kind, mimeType: media.node.mimetype ?? undefined, url: path }];
-        // Caption (image/video) or the file name (document) becomes the message body.
-        const cap =
-          media.kind === 'document'
-            ? media.node.caption || media.node.fileName || media.node.title
-            : media.node.caption;
-        text = typeof cap === 'string' && cap ? cap : undefined;
+      // Caption (image/video) or the file name (document) becomes the message body.
+      const cap =
+        media.kind === 'document'
+          ? media.node.caption || media.node.fileName || media.node.title
+          : media.node.caption;
+      if (opts?.historical) {
+        // Don't bulk-download media history (heavy; old CDN links often expire) — placeholder only.
+        text = typeof cap === 'string' && cap ? cap : `[${media.kind}]`;
       } else {
-        text = `[${media.kind}]`;
+        const path = await this.storeMedia(userId, sock, msg, providerMessageId, media.node.mimetype);
+        if (path) {
+          attachments = [{ kind: media.kind, mimeType: media.node.mimetype ?? undefined, url: path }];
+          text = typeof cap === 'string' && cap ? cap : undefined;
+        } else {
+          text = `[${media.kind}]`;
+        }
       }
     } else {
       text =
@@ -400,6 +431,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       attachments,
       timestamp,
       fromMe,
+      isHistorical: opts?.historical ?? false,
     };
   }
 

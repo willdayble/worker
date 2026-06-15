@@ -77,8 +77,19 @@ export class SupabaseSink implements MessageSink {
     if (m.channel === 'whatsapp_official' && !m.fromMe) {
       patch.window_expires_at = new Date(new Date(m.timestamp).getTime() + 24 * 3600 * 1000).toISOString();
     }
-    const { error: cErr } = await this.sb.from('conversations').update(patch).eq('id', conversationId);
-    if (cErr) fail('update_conversation', cErr as PgError);
+    // A backfilled (historical) message must not clobber a newer "last message" — only advance the
+    // conversation summary when this message is at least as recent as what's already stored.
+    let advance = true;
+    if (m.isHistorical) {
+      const { data: convRow } = await this.sb
+        .from('conversations').select('last_message_at').eq('id', conversationId).maybeSingle();
+      const current = (convRow as { last_message_at: string | null } | null)?.last_message_at;
+      advance = !current || new Date(m.timestamp).getTime() >= new Date(current).getTime();
+    }
+    if (advance) {
+      const { error: cErr } = await this.sb.from('conversations').update(patch).eq('id', conversationId);
+      if (cErr) fail('update_conversation', cErr as PgError);
+    }
 
     return { conversationId, deduped: false };
   }
