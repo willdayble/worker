@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { decryptForUser, safeDecrypt } from '@/lib/crypto';
 import { ThreadAssist } from '@/components/inbox/thread-assist';
 import { cn } from '@/lib/utils';
@@ -40,21 +41,35 @@ export default async function ThreadPage({
 
   const { data: rows } = await supabase
     .from('messages')
-    .select('id, direction, content_type, body_enc, is_historical, status, sent_at, seq')
+    .select('id, direction, content_type, body_enc, attachment_url, is_historical, status, sent_at, seq')
     .eq('conversation_id', conversationId)
     .order('sent_at', { ascending: true })
     .order('seq', { ascending: true })
     .limit(500);
 
+  // Private media: sign a short-lived URL per image (service-role; rows are already RLS-scoped to
+  // this user). Re-signed on every refresh, so the TTL only needs to outlive a render.
+  const service = createServiceClient();
   const messages = await Promise.all(
-    (rows ?? []).map(async (m) => ({
-      id: m.id as string,
-      direction: m.direction as 'in' | 'out',
-      isHistorical: Boolean(m.is_historical),
-      status: m.status as string,
-      sentAt: m.sent_at as string,
-      body: await safeDecrypt(decryptForUser, user.id, m.body_enc as string | null),
-    })),
+    (rows ?? []).map(async (m) => {
+      const attachmentPath = m.attachment_url as string | null;
+      let imageUrl: string | null = null;
+      if (m.content_type === 'image' && attachmentPath) {
+        const { data: signed } = await service.storage
+          .from('inbound-media')
+          .createSignedUrl(attachmentPath, 300);
+        imageUrl = signed?.signedUrl ?? null;
+      }
+      return {
+        id: m.id as string,
+        direction: m.direction as 'in' | 'out',
+        isHistorical: Boolean(m.is_historical),
+        status: m.status as string,
+        sentAt: m.sent_at as string,
+        body: await safeDecrypt(decryptForUser, user.id, m.body_enc as string | null),
+        imageUrl,
+      };
+    }),
   );
 
   // Capability-driven banner (CONTRACTS §2/§4): WA-official replies need an open
@@ -100,7 +115,12 @@ export default async function ThreadPage({
                   : 'bg-muted text-foreground',
               )}
             >
-              <p className="whitespace-pre-wrap break-words">{m.body || '—'}</p>
+              {m.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.imageUrl} alt="attachment" className="mb-1 max-h-72 rounded-lg" />
+              )}
+              {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+              {!m.imageUrl && !m.body && <p>—</p>}
               <div
                 className={cn(
                   'mt-1 flex items-center gap-1.5 text-[10px]',

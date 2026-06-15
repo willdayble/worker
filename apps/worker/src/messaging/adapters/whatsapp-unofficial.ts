@@ -30,9 +30,10 @@ const {
   makeCacheableSignalKeyStore,
   initAuthCreds,
   BufferJSON,
+  downloadMediaMessage,
 } = Baileys as any;
 import type {
-  Channel, ConnState, InboundMessage, MessagingProvider,
+  Channel, ConnState, InboundAttachment, InboundMessage, MessagingProvider,
   OutboundMessage, ProviderCapabilities, SendResult,
 } from '@workerchat/shared';
 import type { ChannelStatePatch } from '../../core/sink.js';
@@ -174,7 +175,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       if (ev.type !== 'notify') return;
       for (const msg of ev.messages ?? []) {
         try {
-          const norm = this.normalize(msg);
+          const norm = await this.toInbound(userId, sock, msg);
           if (norm) await this.inboundHandler?.(norm);
         } catch (err) {
           log.error({ event: 'whatsapp.inbound.failed', userId, channel: this.channel, errorCode: errorToken(err) });
@@ -233,7 +234,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
   // ── internals ──────────────────────────────────────────────────────────────
 
   /** Map a Baileys message → channel-agnostic InboundMessage. Returns null to skip. */
-  private normalize(msg: any): InboundMessage | null {
+  private async toInbound(userId: string, sock: WASocketT, msg: any): Promise<InboundMessage | null> {
     const jid: string | undefined = msg?.key?.remoteJid;
     if (!jid) return null;
     if (jid.endsWith('@g.us') || jid === 'status@broadcast' || jid.endsWith('@newsletter')) return null; // groups/status/channels: out of scope
@@ -264,19 +265,32 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     }
 
     const m = msg.message;
-    const text: string | undefined =
-      m.conversation ??
-      m.extendedTextMessage?.text ??
-      m.imageMessage?.caption ??
-      m.videoMessage?.caption ??
-      (m.imageMessage ? '[image]'
-        : m.videoMessage ? '[video]'
-        : m.audioMessage ? '[audio]'
-        : m.documentMessage ? '[document]'
-        : m.stickerMessage ? '[sticker]'
-        : m.locationMessage ? '[location]'
-        : undefined);
-    if (!text) return null;
+    const providerMessageId = String(msg.key?.id ?? '');
+    let text: string | undefined;
+    let attachments: InboundAttachment[] | undefined;
+
+    if (m.imageMessage) {
+      // Download the E2E-encrypted image, store it privately, attach the storage path. The CRM
+      // serves it via a short-lived signed URL. (Other media stays a placeholder for now.)
+      const path = await this.storeMedia(userId, sock, msg, providerMessageId, m.imageMessage.mimetype);
+      if (path) {
+        attachments = [{ kind: 'image', mimeType: m.imageMessage.mimetype ?? 'image/jpeg', url: path }];
+        text = typeof m.imageMessage.caption === 'string' && m.imageMessage.caption ? m.imageMessage.caption : undefined;
+      } else {
+        text = '[image]'; // download failed → placeholder so the message still appears
+      }
+    } else {
+      text =
+        m.conversation ??
+        m.extendedTextMessage?.text ??
+        (m.videoMessage ? (m.videoMessage.caption || '[video]')
+          : m.audioMessage ? '[audio]'
+          : m.documentMessage ? '[document]'
+          : m.stickerMessage ? '[sticker]'
+          : m.locationMessage ? '[location]'
+          : undefined);
+    }
+    if (!text && !attachments) return null;
 
     const tsRaw = msg.messageTimestamp;
     const tsSec = typeof tsRaw === 'number' ? tsRaw : Number(tsRaw ?? 0);
@@ -284,7 +298,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
 
     return {
       channel: this.channel,
-      providerMessageId: String(msg.key?.id ?? ''),
+      providerMessageId,
       from: {
         channel: this.channel,
         channelUserId,
@@ -294,9 +308,46 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       },
       threadKey: `${this.channel}:${channelUserId}`,
       text,
+      attachments,
       timestamp,
       fromMe,
     };
+  }
+
+  /**
+   * Download (decrypt) WhatsApp media and store it in the private `inbound-media` bucket. Returns the
+   * storage path (`<userId>/<msgId>.<ext>`), or null on failure. The bucket is private; the CRM
+   * serves it via a short-lived signed URL. Media is NOT yet app-layer encrypted like message text
+   * (tracked follow-up) — it relies on Supabase at-rest encryption + RLS + signed URLs.
+   */
+  private async storeMedia(
+    userId: string,
+    sock: WASocketT,
+    msg: any,
+    msgId: string,
+    mimetype?: string,
+  ): Promise<string | null> {
+    try {
+      const buffer = (await downloadMediaMessage(
+        msg,
+        'buffer',
+        {},
+        { logger: silentLogger, reuploadRequest: sock.updateMediaMessage },
+      )) as Buffer;
+      const subtype = (mimetype ?? 'image/jpeg').split('/')[1]?.split(';')[0] ?? 'jpg';
+      const path = `${userId}/${msgId}.${subtype}`;
+      const { error } = await this.deps.sb.storage
+        .from('inbound-media')
+        .upload(path, buffer, { contentType: mimetype ?? 'image/jpeg', upsert: true });
+      if (error) {
+        log.error({ event: 'whatsapp.media.upload_failed', userId, channel: this.channel, errorCode: 'upload_error' });
+        return null;
+      }
+      return path;
+    } catch (err) {
+      log.error({ event: 'whatsapp.media.download_failed', userId, channel: this.channel, errorCode: errorToken(err) });
+      return null;
+    }
   }
 
   private async resolveChannelId(userId: string): Promise<string | null> {
