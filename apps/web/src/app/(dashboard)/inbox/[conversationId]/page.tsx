@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
-import { format } from 'date-fns';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { decryptForUser, safeDecrypt } from '@/lib/crypto';
 import { ThreadAssist } from '@/components/inbox/thread-assist';
+import { LocalTime } from '@/components/inbox/local-time';
 import { cn } from '@/lib/utils';
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -127,7 +127,7 @@ export default async function ThreadPage({
                   m.direction === 'out' ? 'text-primary-foreground/70' : 'text-muted-foreground',
                 )}
               >
-                <span>{format(new Date(m.sentAt), 'd MMM, HH:mm')}</span>
+                <LocalTime iso={m.sentAt} />
                 {m.isHistorical && <span>· history</span>}
                 {m.direction === 'out' && <span>· {m.status}</span>}
               </div>
