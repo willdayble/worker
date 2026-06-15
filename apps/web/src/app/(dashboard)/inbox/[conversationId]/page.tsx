@@ -55,9 +55,9 @@ export default async function ThreadPage({
       const attachmentPath = m.attachment_url as string | null;
       let mediaUrl: string | null = null;
       if (attachmentPath) {
-        const { data: signed } = await service.storage
-          .from('inbound-media')
-          .createSignedUrl(attachmentPath, 300);
+        // Inbound media lives in inbound-media; media we sent lives in outbound-media.
+        const bucket = m.direction === 'out' ? 'outbound-media' : 'inbound-media';
+        const { data: signed } = await service.storage.from(bucket).createSignedUrl(attachmentPath, 300);
         mediaUrl = signed?.signedUrl ?? null;
       }
       return {

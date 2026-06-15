@@ -46,7 +46,7 @@ WhatsApp  ──Baileys (linked device)──▶  worker adapter  ──normaliz
 | Area | Status | Notes |
 |---|---|---|
 | **Ban survivability** | **Deferred (the kill-test)** | Unofficial WhatsApp can be banned. The project has a documented kill-test (`docs/killtest/`) to measure this on throwaway numbers; it's intentionally **separate** from proving the bridge. **Do not point a number you can't lose at this yet.** |
-| **Inbound media** | ✅ images, video, audio/voice, documents | Downloaded + stored in a private bucket, served via short-lived signed URLs. NOT app-layer encrypted like message text yet (follow-up). Outbound media (CRM → WhatsApp) is still text-only. |
+| **Media (both ways)** | ✅ images, video, audio/voice, documents | Inbound downloaded + stored; outbound attached/recorded in the composer (image/video + voice notes) and sent via the worker. Private buckets + signed URLs; NOT app-layer encrypted like message text yet (follow-up). |
 | **History backfill** | Not yet | New messages onward only; no import of pre-existing history on pair. |
 | **Multi-user** | Not yet | Today: one worker per user. Production needs per-user worker sessions + a connect control-plane (the QR screen already models the UX). |
 | **Official Cloud API** | Built, not chosen | A Meta WhatsApp Business API adapter exists, but Meta's Business policy likely prohibits the use case (risk of account shutdown) and AU Coexistence availability is unconfirmed — hence the unofficial route. |
@@ -55,6 +55,6 @@ WhatsApp  ──Baileys (linked device)──▶  worker adapter  ──normaliz
 
 1. **Run the kill-test** (ban survivability) on throwaway numbers → GO/NO-GO on unofficial as a real
    channel.
-2. **Outbound media + history backfill** (inbound media already works) so threads are complete both ways.
+2. **History backfill** + **voice-note transcoding** (browsers record webm/opus; clean WhatsApp voice notes want ogg/opus — may need server-side ffmpeg).
 3. **Multi-user**: per-user worker sessions + the in-CRM connect control-plane.
 4. Harden: reconnect/observability, outbound `claim_outbound` RPC (atomic), rate/abuse handling.

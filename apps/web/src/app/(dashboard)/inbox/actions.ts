@@ -10,13 +10,26 @@ export interface StageResult {
   error?: string;
 }
 
-// Human-approved outbound (CONTRACTS §4): the CRM inserts a bridge_outbound(pending)
-// row ONLY when the human clicks send — never auto-send. The worker later claims it
-// (pending→sending), decrypts in memory, and delivers. We store the destination
-// encrypted + a salted HMAC routing index; nothing here ever calls a provider.
-export async function stageOutbound(conversationId: string, text: string): Promise<StageResult> {
+export interface OutboundAttachmentInput {
+  bucket: string;
+  path: string;
+  kind: 'image' | 'video' | 'audio' | 'document';
+  mimeType: string;
+  bytes: number;
+  filename?: string;
+}
+
+// Human-approved outbound (CONTRACTS §4): the CRM inserts a bridge_outbound(pending) row ONLY when
+// the human clicks send — never auto-send. The worker later claims it (pending→sending), decrypts in
+// memory, and delivers. The destination is stored encrypted + a salted HMAC routing index; media
+// metadata (bucket/path/kind) is encrypted into attachment_enc. Nothing here calls a provider.
+export async function stageOutbound(
+  conversationId: string,
+  text: string,
+  attachment?: OutboundAttachmentInput,
+): Promise<StageResult> {
   const body = text.trim();
-  if (!body) return { ok: false, error: 'Message is empty.' };
+  if (!body && !attachment) return { ok: false, error: 'Message is empty.' };
 
   const supabase = await createClient();
   const {
@@ -38,14 +51,30 @@ export async function stageOutbound(conversationId: string, text: string): Promi
   const channelUserId = threadKey.slice(threadKey.indexOf(':') + 1);
   if (!channelUserId) return { ok: false, error: 'Could not resolve destination.' };
 
-  const { error: insertError } = await supabase.from('bridge_outbound').insert({
+  const row: Record<string, unknown> = {
     user_id: user.id,
     channel,
     to_channel_user_id_enc: await encryptForUser(user.id, channelUserId),
     to_channel_user_id_hmac: await hmacIdentifier(user.id, channelUserId),
-    body_enc: await encryptForUser(user.id, body),
+    body_enc: body ? await encryptForUser(user.id, body) : null,
     status: 'pending',
-  });
+  };
+  if (attachment) {
+    // Matches shared's OutboundAttachment shape; the worker reads the blob from storage and sends it.
+    const meta = [
+      {
+        kind: attachment.kind,
+        storageBucket: attachment.bucket,
+        storagePath: attachment.path,
+        mimeType: attachment.mimeType,
+        bytes: attachment.bytes,
+        filename: attachment.filename,
+      },
+    ];
+    row.attachment_enc = await encryptForUser(user.id, JSON.stringify(meta));
+  }
+
+  const { error: insertError } = await supabase.from('bridge_outbound').insert(row);
   if (insertError) return { ok: false, error: insertError.message };
 
   revalidatePath(`/inbox/${conversationId}`);

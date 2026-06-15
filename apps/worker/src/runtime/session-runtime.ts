@@ -108,6 +108,7 @@ export class SessionRuntime {
           threadKey: `${provider.channel}:${toChannelUserId}`,
           bodyEnc: row.bodyEnc,
           contentType: attachments?.length ? attachments[0]!.kind : 'text',
+          attachmentUrl: attachments?.length ? attachments[0]!.storagePath : undefined,
           sentAt: new Date().toISOString(),
         });
       } else {

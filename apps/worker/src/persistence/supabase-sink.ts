@@ -201,6 +201,7 @@ export class SupabaseSink implements MessageSink {
         provider_message_id: providerMessageId,
         content_type: mirror.contentType,
         body_enc: mirror.bodyEnc ?? null,
+        attachment_url: mirror.attachmentUrl ?? null,
         status: 'sent',
         sent_at: mirror.sentAt,
       });

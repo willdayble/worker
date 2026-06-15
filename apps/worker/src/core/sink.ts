@@ -47,6 +47,7 @@ export interface OutboundMirror {
   threadKey: string;            // `${channel}:${toChannelUserId}` (runtime computes after decrypt)
   bodyEnc?: string;             // ciphertext to mirror (never plaintext)
   contentType: string;         // 'text' | attachment kind
+  attachmentUrl?: string | null; // storage path of sent media (so the CRM can display it)
   sentAt: string;              // ISO 8601
 }
 
@@ -176,6 +177,7 @@ export class InMemorySink implements MessageSink {
       direction: 'out',
       contentType: mirror.contentType,
       bodyEnc: mirror.bodyEnc,
+      attachmentUrl: mirror.attachmentUrl ?? undefined,
       isHistorical: false,
       status: 'sent',
       sentAt: mirror.sentAt,

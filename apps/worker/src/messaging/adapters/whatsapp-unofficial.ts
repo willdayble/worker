@@ -34,7 +34,7 @@ const {
 } = Baileys as any;
 import type {
   Channel, ConnState, InboundAttachment, InboundMessage, MessagingProvider,
-  OutboundMessage, ProviderCapabilities, SendResult,
+  OutboundAttachment, OutboundMessage, ProviderCapabilities, SendResult,
 } from '@workerchat/shared';
 import type { ChannelStatePatch } from '../../core/sink.js';
 import type { Encryptor } from '../../core/crypto.js';
@@ -196,23 +196,60 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     if (!sess || sess.state !== 'connected') {
       return { ok: false, status: 'failed', windowState: 'n/a', error: 'not_connected' };
     }
-    if (!msg.text) {
-      // PoC: text only. Media outbound is deferred (capabilities.mediaSync = false).
-      return { ok: false, status: 'failed', windowState: 'n/a', error: 'media_unsupported_poc' };
-    }
+    const jid = toJid(msg.toChannelUserId);
     try {
-      const sent = await sess.sock.sendMessage(toJid(msg.toChannelUserId), { text: msg.text });
-      const providerMessageId = sent?.key?.id ?? undefined;
-      if (!providerMessageId) return { ok: false, status: 'failed', windowState: 'n/a', error: 'no_message_id' };
+      let providerMessageId: string | undefined;
+
+      // Attachments first: read the blob the CRM staged in Storage (service_role) and send via
+      // Baileys. The caption (msg.text) rides on the first media message.
+      for (const att of msg.attachments ?? []) {
+        const content = await this.buildMediaContent(att, msg.text);
+        if (!content) return { ok: false, status: 'failed', windowState: 'n/a', error: 'media_read_failed' };
+        const sent = await sess.sock.sendMessage(jid, content);
+        providerMessageId = sent?.key?.id ?? providerMessageId;
+      }
+
+      // Standalone text — only if it wasn't already attached as a caption above.
+      if (msg.text && !(msg.attachments && msg.attachments.length)) {
+        const sent = await sess.sock.sendMessage(jid, { text: msg.text });
+        providerMessageId = sent?.key?.id ?? providerMessageId;
+      }
+
+      if (!providerMessageId) return { ok: false, status: 'failed', windowState: 'n/a', error: 'empty_message' };
       log.info({
         event: 'whatsapp.sent', userId, channel: this.channel,
         channelUserId: msg.toChannelUserId, providerMessageId,
+        attachments: msg.attachments?.length ?? 0,
       });
       return { ok: true, providerMessageId, status: 'sent', windowState: 'n/a' };
     } catch (err) {
       const errCode = errorToken(err);
       log.error({ event: 'whatsapp.send.failed', userId, channel: this.channel, errorCode: errCode });
       return { ok: false, status: 'failed', windowState: 'n/a', error: errCode };
+    }
+  }
+
+  /** Read a staged outbound media blob from Storage and shape it into a Baileys send payload. */
+  private async buildMediaContent(att: OutboundAttachment, caption?: string): Promise<Record<string, unknown> | null> {
+    const { data, error } = await this.deps.sb.storage.from(att.storageBucket).download(att.storagePath);
+    if (error || !data) {
+      log.error({ event: 'whatsapp.outbound_media.read_failed', channel: this.channel, errorCode: 'download_error' });
+      return null;
+    }
+    const buffer = Buffer.from(await data.arrayBuffer());
+    const cap = caption && caption.trim() ? caption.trim() : undefined;
+    switch (att.kind) {
+      case 'image':
+        return { image: buffer, mimetype: att.mimeType, caption: cap };
+      case 'video':
+        return { video: buffer, mimetype: att.mimeType, caption: cap };
+      case 'audio':
+        // Voice note (ptt). WhatsApp's voice bubble wants ogg/opus; browser recordings are opus too.
+        return { audio: buffer, mimetype: att.mimeType || 'audio/ogg; codecs=opus', ptt: true };
+      case 'document':
+        return { document: buffer, mimetype: att.mimeType, fileName: att.filename ?? 'file' };
+      default:
+        return null;
     }
   }
 
