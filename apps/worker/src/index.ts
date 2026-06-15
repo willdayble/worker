@@ -111,7 +111,6 @@ async function main(): Promise<void> {
         sb: supabase,
         encryptor,
         writeChannelState: (uid, channel, patch) => sink.writeChannelState(uid, channel, patch),
-        pairNumber: process.env.WHATSAPP_PAIR_NUMBER,
       });
       const runtime = new SessionRuntime({ userId, provider, sink, encryptor });
       await runtime.start();

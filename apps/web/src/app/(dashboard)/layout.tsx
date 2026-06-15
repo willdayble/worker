@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Inbox, Users, KanbanSquare } from 'lucide-react';
+import { Inbox, Users, KanbanSquare, Settings } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 
 // Authenticated shell: a thin left nav + the active surface. Server component —
@@ -27,6 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <NavLink href="/inbox" icon={<Inbox size={16} />} label="Inbox" />
           <NavLink href="/contacts" icon={<Users size={16} />} label="Contacts" />
           <NavLink href="/pipeline" icon={<KanbanSquare size={16} />} label="Pipeline" />
+          <NavLink href="/settings" icon={<Settings size={16} />} label="Settings" />
         </div>
         <div className="border-t border-border pt-2">
           <p className="truncate px-2 pb-2 text-xs text-muted-foreground">{user.email}</p>

@@ -20,9 +20,10 @@
 import * as Baileys from '@whiskeysockets/baileys';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Baileys ships CommonJS; under NodeNext its default export (the socket factory) doesn't type as
-// callable through a default import, so reach it via the namespace + cast (runtime-safe either way).
-const makeWASocket = ((Baileys as any).default ?? Baileys) as (config: any) => any;
+// Baileys ships CommonJS. Under NodeNext the socket factory is the NAMED export `makeWASocket`
+// (verified a function against 6.7.18); the `default` is the module object (not callable). Prefer
+// the named export, fall back to the nested default for forward-compat.
+const makeWASocket = ((Baileys as any).makeWASocket ?? (Baileys as any).default?.default) as (config: any) => any;
 const {
   DisconnectReason,
   fetchLatestBaileysVersion,
@@ -48,10 +49,8 @@ export interface WhatsAppUnofficialDeps {
   sb: SupabaseClient;
   /** Encrypts the session blobs at rest (same Encryptor the worker uses everywhere). */
   encryptor: Encryptor;
-  /** Surfaces ConnState / pair-code / qr onto the channels row for the CRM (Realtime, C6). */
+  /** Surfaces ConnState / qr onto the channels row for the CRM to render (Realtime, C6). */
   writeChannelState: (userId: string, channel: Channel, patch: ChannelStatePatch) => Promise<void>;
-  /** Digits of the WhatsApp number to link (e.g. '61412345678'), for phone pairing-code login. */
-  pairNumber?: string;
 }
 
 interface Session { sock: WASocketT; state: ConnState; ownId?: string; }
@@ -79,7 +78,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     echoesOwnDeviceMessages: true, // Baileys delivers own-device sends; we drop fromMe (mirrored separately)
     deliveryReceipts: true,
     readReceipts: false,
-    connectMethod: 'pair_code',
+    connectMethod: 'qr',
   };
 
   private readonly sessions = new Map<string, Session>();
@@ -119,29 +118,15 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     this.sessions.set(userId, { sock, state: 'connecting' });
     sock.ev.on('creds.update', saveCreds);
 
-    let pairingRequested = false;
     sock.ev.on('connection.update', async (u: any) => {
       const { connection, lastDisconnect, qr } = u;
 
-      // Pairing: when the QR window first opens and the account isn't yet linked, request a phone
-      // pairing-code (entered in WhatsApp → Linked Devices → "Link with phone number instead").
-      if (qr && !pairingRequested && !state.creds.registered) {
-        pairingRequested = true;
-        if (this.deps.pairNumber) {
-          try {
-            const code = await sock.requestPairingCode(this.deps.pairNumber.replace(/\D/g, ''));
-            // Code is sensitive auth UX → surface on the channels row, NEVER to logs (§4).
-            await this.deps.writeChannelState(userId, this.channel, { state: 'pairing', pairCode: code, qr: null });
-            log.info({ event: 'whatsapp.pairing.code_ready', userId, channel: this.channel });
-          } catch (err) {
-            await this.deps.writeChannelState(userId, this.channel, { state: 'error', lastError: 'pairing_failed' });
-            log.error({ event: 'whatsapp.pairing.failed', userId, channel: this.channel, errorCode: errorToken(err) });
-          }
-        } else {
-          // No pair number → surface the QR string for an in-CRM connect screen to render.
-          await this.deps.writeChannelState(userId, this.channel, { state: 'pairing', qr });
-          log.info({ event: 'whatsapp.qr.ready', userId, channel: this.channel });
-        }
+      // QR pairing, fully app-driven (no number/env): Baileys rotates the QR ~every 20s until it's
+      // scanned. Surface EACH one on the channels row so the in-CRM Connect screen renders the
+      // current code; the user scans it in WhatsApp → Linked Devices → Link a Device.
+      if (qr && !state.creds.registered) {
+        await this.deps.writeChannelState(userId, this.channel, { state: 'pairing', qr });
+        log.info({ event: 'whatsapp.qr.ready', userId, channel: this.channel });
       }
 
       if (connection === 'open') {
