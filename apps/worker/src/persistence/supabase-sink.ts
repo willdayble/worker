@@ -54,13 +54,13 @@ export class SupabaseSink implements MessageSink {
     // a 23505 means we've already stored this message → deduped.
     const { error } = await this.sb.from('messages').insert({
       conversation_id: conversationId,
-      direction: 'in',
+      direction: m.fromMe ? 'out' : 'in',
       provider_message_id: m.providerMessageId,
       content_type: firstAtt ? firstAtt.kind : 'text',
       body_enc: bodyEnc,
       attachment_url: firstAtt?.url ?? null,
       is_historical: m.isHistorical ?? false,
-      status: 'delivered',
+      status: m.fromMe ? 'sent' : 'delivered',
       sent_at: m.timestamp,
     });
     if (error) {

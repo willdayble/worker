@@ -64,7 +64,9 @@ const silentLogger: any = {
 };
 
 const jidToDigits = (jid: string): string => (jid.split('@')[0] ?? '').split(':')[0] ?? '';
-const digitsToJid = (digits: string): string => `${digits.replace(/\D/g, '')}@s.whatsapp.net`;
+// A stored channelUserId is routed verbatim when it's already a full JID (e.g. a LID `<id>@lid`, so
+// the reply reaches the exact sender); bare digits are a phone → `<digits>@s.whatsapp.net`.
+const toJid = (id: string): string => (id.includes('@') ? id : `${id.replace(/\D/g, '')}@s.whatsapp.net`);
 
 export class WhatsAppUnofficialProvider implements MessagingProvider {
   readonly channel: Channel = 'whatsapp_unofficial';
@@ -75,7 +77,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     mediaSync: false,              // media download deferred (PoC: text + bracket placeholders)
     requires24hWindow: false,
     groups: false,
-    echoesOwnDeviceMessages: true, // Baileys delivers own-device sends; we drop fromMe (mirrored separately)
+    echoesOwnDeviceMessages: true, // Baileys delivers own-device sends → ingested as outbound (deduped by provider id)
     deliveryReceipts: true,
     readReceipts: false,
     connectMethod: 'qr',
@@ -198,7 +200,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       return { ok: false, status: 'failed', windowState: 'n/a', error: 'media_unsupported_poc' };
     }
     try {
-      const sent = await sess.sock.sendMessage(digitsToJid(msg.toChannelUserId), { text: msg.text });
+      const sent = await sess.sock.sendMessage(toJid(msg.toChannelUserId), { text: msg.text });
       const providerMessageId = sent?.key?.id ?? undefined;
       if (!providerMessageId) return { ok: false, status: 'failed', windowState: 'n/a', error: 'no_message_id' };
       log.info({
@@ -234,11 +236,32 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
   private normalize(msg: any): InboundMessage | null {
     const jid: string | undefined = msg?.key?.remoteJid;
     if (!jid) return null;
-    if (jid.endsWith('@g.us') || jid === 'status@broadcast') return null; // groups/status: out of scope
-    if (msg.key?.fromMe) return null;       // our own sends are mirrored separately by the runtime
+    if (jid.endsWith('@g.us') || jid === 'status@broadcast' || jid.endsWith('@newsletter')) return null; // groups/status/channels: out of scope
     if (!msg.message) return null;
-    const digits = jidToDigits(jid);
-    if (!/^\d{7,15}$/.test(digits)) return null;
+
+    // Own-device send (typed in WhatsApp directly, not via the CRM) → mirror as OUTBOUND so the CRM
+    // shows the full thread. Deduped against CRM-originated sends by provider_message_id (sink).
+    const fromMe = Boolean(msg.key?.fromMe);
+
+    // Identity = the OTHER party (for fromMe, remoteJid is the recipient). WhatsApp addresses many
+    // 1:1 chats by LID (`<id>@lid`) for privacy; the phone is NOT derivable on baileys 6.7.18. For a
+    // phone JID store bare digits (+E164); for a LID preserve the full `<id>@lid` so replies route
+    // back to the SAME person (no fabricated number — the cause of the earlier wrong-number bug).
+    const at = jid.indexOf('@');
+    const local = (at >= 0 ? jid.slice(0, at) : jid).split(':')[0] ?? '';
+    const server = at >= 0 ? jid.slice(at + 1) : '';
+    let channelUserId: string;
+    let phoneE164: string | undefined;
+    if (server === 's.whatsapp.net') {
+      if (!/^\d{7,15}$/.test(local)) return null;
+      channelUserId = local;
+      phoneE164 = `+${local}`;
+    } else if (server === 'lid') {
+      channelUserId = `${local}@lid`;
+      phoneE164 = undefined;
+    } else {
+      return null; // unknown addressing — skip
+    }
 
     const m = msg.message;
     const text: string | undefined =
@@ -264,14 +287,15 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       providerMessageId: String(msg.key?.id ?? ''),
       from: {
         channel: this.channel,
-        channelUserId: digits,
-        phoneE164: `+${digits}`,
-        displayName: typeof msg.pushName === 'string' ? msg.pushName : undefined,
+        channelUserId,
+        phoneE164,
+        // pushName on a fromMe echo is OUR name, not the contact's — only trust it for inbound.
+        displayName: !fromMe && typeof msg.pushName === 'string' ? msg.pushName : undefined,
       },
-      threadKey: `${this.channel}:${digits}`,
+      threadKey: `${this.channel}:${channelUserId}`,
       text,
       timestamp,
-      fromMe: false,
+      fromMe,
     };
   }
 

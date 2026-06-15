@@ -147,12 +147,12 @@ export class InMemorySink implements MessageSink {
     this.messages.push({
       conversationId,
       providerMessageId: m.providerMessageId,
-      direction: 'in',
+      direction: m.fromMe ? 'out' : 'in',
       contentType: firstAtt ? firstAtt.kind : 'text',
       bodyEnc,
       attachmentUrl: m.attachments?.[0]?.url,
       isHistorical: m.isHistorical ?? false,
-      status: 'delivered',
+      status: m.fromMe ? 'sent' : 'delivered',
       sentAt: m.timestamp,
     });
     return { conversationId, deduped: false };
