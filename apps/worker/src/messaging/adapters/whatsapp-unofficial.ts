@@ -40,6 +40,11 @@ import type { ChannelStatePatch } from '../../core/sink.js';
 import type { Encryptor } from '../../core/crypto.js';
 import { log, errorToken } from '../../core/logger.js';
 import { isUnofficialWhatsAppEnabled } from '../../core/flags.js';
+import { spawn } from 'node:child_process';
+import { writeFile, readFile, unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import ffmpegPathRaw from 'ffmpeg-static';
 
 const GATED = 'whatsapp_unofficial_gated_on_killtest_verdict';
 
@@ -68,6 +73,36 @@ const jidToDigits = (jid: string): string => (jid.split('@')[0] ?? '').split(':'
 // A stored channelUserId is routed verbatim when it's already a full JID (e.g. a LID `<id>@lid`, so
 // the reply reaches the exact sender); bare digits are a phone → `<digits>@s.whatsapp.net`.
 const toJid = (id: string): string => (id.includes('@') ? id : `${id.replace(/\D/g, '')}@s.whatsapp.net`);
+
+// ffmpeg-static default-exports the binary path, but under NodeNext it types as the module
+// namespace — coerce to its real runtime type (a string, or null if the binary is unavailable).
+const ffmpegBin = ffmpegPathRaw as unknown as string | null;
+
+// Transcode browser-recorded audio (webm/opus) → ogg/opus so it plays as a WhatsApp voice note.
+// Uses the bundled ffmpeg binary via temp files (robust for non-seekable webm input). Returns null
+// on any failure; the caller falls back to the original bytes.
+async function transcodeToOggOpus(input: Buffer): Promise<Buffer | null> {
+  if (!ffmpegBin) return null;
+  const base = join(tmpdir(), `wa-voice-${Date.now()}-${Math.round(Math.random() * 1e9)}`);
+  const inPath = `${base}.in`;
+  const outPath = `${base}.ogg`;
+  try {
+    await writeFile(inPath, input);
+    await new Promise<void>((resolve, reject) => {
+      const ff = spawn(ffmpegBin, ['-y', '-i', inPath, '-c:a', 'libopus', '-b:a', '32k', outPath], {
+        stdio: 'ignore',
+      });
+      ff.on('error', reject);
+      ff.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg_exit_${code}`))));
+    });
+    return await readFile(outPath);
+  } catch {
+    return null;
+  } finally {
+    await unlink(inPath).catch(() => {});
+    await unlink(outPath).catch(() => {});
+  }
+}
 
 export class WhatsAppUnofficialProvider implements MessagingProvider {
   readonly channel: Channel = 'whatsapp_unofficial';
@@ -243,9 +278,17 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
         return { image: buffer, mimetype: att.mimeType, caption: cap };
       case 'video':
         return { video: buffer, mimetype: att.mimeType, caption: cap };
-      case 'audio':
-        // Voice note (ptt). WhatsApp's voice bubble wants ogg/opus; browser recordings are opus too.
+      case 'audio': {
+        // Voice note (ptt). WhatsApp's voice bubble wants ogg/opus; browsers record webm/opus, so
+        // transcode. Best-effort: if ffmpeg fails, send the original bytes (logged).
+        if (/ogg/i.test(att.mimeType ?? '')) {
+          return { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: true };
+        }
+        const ogg = await transcodeToOggOpus(buffer);
+        if (ogg) return { audio: ogg, mimetype: 'audio/ogg; codecs=opus', ptt: true };
+        log.warn({ event: 'whatsapp.voice.transcode_failed', channel: this.channel, errorCode: 'ffmpeg' });
         return { audio: buffer, mimetype: att.mimeType || 'audio/ogg; codecs=opus', ptt: true };
+      }
       case 'document':
         return { document: buffer, mimetype: att.mimeType, fileName: att.filename ?? 'file' };
       default:

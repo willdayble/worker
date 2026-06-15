@@ -62,7 +62,9 @@ export function Composer({
         return;
       }
       const previewUrl =
-        mime.startsWith('image/') || mime.startsWith('video/') ? URL.createObjectURL(blob) : undefined;
+        mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')
+          ? URL.createObjectURL(blob)
+          : undefined;
       setAttachment({
         bucket: 'outbound-media',
         path,
@@ -134,14 +136,22 @@ export function Composer({
     <div className="border-t border-border p-3">
       {attachment && (
         <div className="mb-2 flex items-center gap-2 rounded-md border border-border p-2">
-          {attachment.previewUrl && attachment.kind === 'image' && (
+          {attachment.kind === 'image' && attachment.previewUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={attachment.previewUrl} alt="" className="h-12 w-12 rounded object-cover" />
+            <img src={attachment.previewUrl} alt="" className="h-12 w-12 shrink-0 rounded object-cover" />
           )}
-          <span className="flex-1 truncate text-xs text-muted-foreground">{attachment.label}</span>
+          {attachment.kind === 'video' && attachment.previewUrl && (
+            <video src={attachment.previewUrl} className="h-12 w-12 shrink-0 rounded object-cover" />
+          )}
+          {/* Voice note: play it back before sending to check it recorded. */}
+          {attachment.kind === 'audio' && attachment.previewUrl ? (
+            <audio src={attachment.previewUrl} controls className="h-9 flex-1" />
+          ) : (
+            <span className="flex-1 truncate text-xs text-muted-foreground">{attachment.label}</span>
+          )}
           <button
             onClick={() => setAttachment(null)}
-            className="text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
             aria-label="Remove attachment"
           >
             <X size={15} />
