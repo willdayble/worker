@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { decryptForUser, safeDecrypt } from '@/lib/crypto';
 import { ThreadAssist } from '@/components/inbox/thread-assist';
 import { LocalTime } from '@/components/inbox/local-time';
+import { fallbackContactName } from '@/components/inbox/conversation-list';
 import { cn } from '@/lib/utils';
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -55,9 +56,13 @@ export default async function ThreadPage({
       const attachmentPath = m.attachment_url as string | null;
       let mediaUrl: string | null = null;
       if (attachmentPath) {
-        // Inbound media lives in inbound-media; media we sent lives in outbound-media.
-        const bucket = m.direction === 'out' ? 'outbound-media' : 'inbound-media';
-        const { data: signed } = await service.storage.from(bucket).createSignedUrl(attachmentPath, 300);
+        // New rows store `<bucket>/<path>`; legacy rows store just the path (bucket by direction).
+        const slash = attachmentPath.indexOf('/');
+        const maybeBucket = attachmentPath.slice(0, slash);
+        const bucketed = maybeBucket === 'inbound-media' || maybeBucket === 'outbound-media';
+        const bucket = bucketed ? maybeBucket : m.direction === 'out' ? 'outbound-media' : 'inbound-media';
+        const objectPath = bucketed ? attachmentPath.slice(slash + 1) : attachmentPath;
+        const { data: signed } = await service.storage.from(bucket).createSignedUrl(objectPath, 300);
         mediaUrl = signed?.signedUrl ?? null;
       }
       return {
@@ -85,7 +90,9 @@ export default async function ThreadPage({
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           {contact?.is_flagged && <AlertTriangle size={15} className="text-amber-500" />}
-          <span className="font-medium">{contact?.display_name ?? 'Unknown contact'}</span>
+          <span className="font-medium">
+            {contact?.display_name ?? fallbackContactName(conv.channel as string, conv.thread_key as string)}
+          </span>
         </div>
         <span className="text-xs text-muted-foreground">
           {CHANNEL_LABEL[conv.channel as string] ?? (conv.channel as string)}

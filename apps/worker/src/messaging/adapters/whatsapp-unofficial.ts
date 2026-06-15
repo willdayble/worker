@@ -406,17 +406,14 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
         media.kind === 'document'
           ? media.node.caption || media.node.fileName || media.node.title
           : media.node.caption;
-      if (opts?.historical) {
-        // Don't bulk-download media history (heavy; old CDN links often expire) — placeholder only.
-        text = typeof cap === 'string' && cap ? cap : `[${media.kind}]`;
+      // Download + store media for live AND historical messages (old CDN links can expire → falls
+      // back to a [kind] placeholder). Re-syncing re-fetches; acceptable for the PoC.
+      const path = await this.storeMedia(userId, sock, msg, providerMessageId, media.node.mimetype);
+      if (path) {
+        attachments = [{ kind: media.kind, mimeType: media.node.mimetype ?? undefined, url: path }];
+        text = typeof cap === 'string' && cap ? cap : undefined;
       } else {
-        const path = await this.storeMedia(userId, sock, msg, providerMessageId, media.node.mimetype);
-        if (path) {
-          attachments = [{ kind: media.kind, mimeType: media.node.mimetype ?? undefined, url: path }];
-          text = typeof cap === 'string' && cap ? cap : undefined;
-        } else {
-          text = `[${media.kind}]`;
-        }
+        text = typeof cap === 'string' && cap ? cap : `[${media.kind}]`;
       }
     } else {
       text =
@@ -479,7 +476,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
         log.error({ event: 'whatsapp.media.upload_failed', userId, channel: this.channel, errorCode: 'upload_error' });
         return null;
       }
-      return path;
+      return `inbound-media/${path}`; // bucket-qualified so the CRM signs from the right bucket
     } catch (err) {
       log.error({ event: 'whatsapp.media.download_failed', userId, channel: this.channel, errorCode: errorToken(err) });
       return null;

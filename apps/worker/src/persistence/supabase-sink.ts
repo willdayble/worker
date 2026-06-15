@@ -64,7 +64,21 @@ export class SupabaseSink implements MessageSink {
       sent_at: m.timestamp,
     });
     if (error) {
-      if ((error as PgError)?.code === UNIQUE_VIOLATION) return { conversationId, deduped: true };
+      if ((error as PgError)?.code === UNIQUE_VIOLATION) {
+        // Backfill media onto a message we previously stored as a placeholder (e.g. a history
+        // re-sync that now downloads the media). Only fills a row that has no attachment yet.
+        if (firstAtt?.url) {
+          await this.sb.from('messages').update({
+            content_type: firstAtt.kind,
+            attachment_url: firstAtt.url,
+            body_enc: bodyEnc,
+          })
+            .eq('conversation_id', conversationId)
+            .eq('provider_message_id', m.providerMessageId)
+            .is('attachment_url', null);
+        }
+        return { conversationId, deduped: true };
+      }
       fail('insert_message', error as PgError);
     }
 
