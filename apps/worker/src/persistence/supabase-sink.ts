@@ -102,7 +102,15 @@ export class SupabaseSink implements MessageSink {
       .eq('user_id', userId).eq('channel', m.channel).eq('channel_user_id', m.from.channelUserId)
       .maybeSingle();
     if (error) fail('select_contact_channel', error as PgError);
-    if (link) return (link as { contact_id: string }).contact_id;
+    if (link) {
+      const contactId = (link as { contact_id: string }).contact_id;
+      // Backfill a missing name once we learn one (e.g. from the history sync) — never overwrite.
+      if (m.from.displayName) {
+        await this.sb.from('contacts').update({ display_name: m.from.displayName })
+          .eq('id', contactId).is('display_name', null);
+      }
+      return contactId;
+    }
 
     // No link yet. Auto-merge ONLY on an exact phone_e164 match (M7); else a fresh contact.
     let contactId: string | undefined;

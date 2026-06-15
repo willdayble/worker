@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Inbox, Users, KanbanSquare, Settings } from 'lucide-react';
+import { Inbox, Users, KanbanSquare, Settings, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 
 // Authenticated shell: a thin left nav + the active surface. Server component —
@@ -11,6 +11,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  // Surface a persistent connect prompt when WhatsApp isn't linked (RLS-scoped to this user).
+  const { data: channels } = await supabase.from('channels').select('channel, state');
+  const waConnected = (channels ?? []).some(
+    (c) => c.channel === 'whatsapp_unofficial' && c.state === 'connected',
+  );
 
   async function signOut() {
     'use server';
@@ -24,6 +30,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <nav className="flex w-56 shrink-0 flex-col border-r border-border p-3">
         <div className="px-2 py-3 text-sm font-semibold">WorkerChat</div>
         <div className="flex flex-1 flex-col gap-1">
+          {!waConnected && (
+            <Link
+              href="/settings"
+              className="mb-1 flex items-center gap-2 rounded-md bg-amber-500/15 px-2 py-1.5 text-sm font-medium text-amber-600 hover:bg-amber-500/25"
+            >
+              <AlertTriangle size={15} />
+              Connect WhatsApp
+            </Link>
+          )}
           <NavLink href="/inbox" icon={<Inbox size={16} />} label="Inbox" />
           <NavLink href="/contacts" icon={<Users size={16} />} label="Contacts" />
           <NavLink href="/pipeline" icon={<KanbanSquare size={16} />} label="Pipeline" />

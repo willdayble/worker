@@ -8,6 +8,7 @@ import type { Channel } from '@workerchat/shared';
 export interface StageResult {
   ok: boolean;
   error?: string;
+  code?: 'disconnected';
 }
 
 export interface OutboundAttachmentInput {
@@ -50,6 +51,19 @@ export async function stageOutbound(
   const threadKey = conv.thread_key as string;
   const channelUserId = threadKey.slice(threadKey.indexOf(':') + 1);
   if (!channelUserId) return { ok: false, error: 'Could not resolve destination.' };
+
+  // Don't stage into the void: if the channel isn't connected the worker can't deliver. Surface it
+  // so the composer can prompt a reconnect instead of failing silently.
+  const { data: chan } = await supabase
+    .from('channels')
+    .select('state')
+    .eq('user_id', user.id)
+    .eq('channel', channel)
+    .maybeSingle();
+  if ((chan as { state: string } | null)?.state !== 'connected') {
+    const label = channel === 'telegram' ? 'Telegram' : 'WhatsApp';
+    return { ok: false, error: `${label} isn’t connected.`, code: 'disconnected' };
+  }
 
   const row: Record<string, unknown> = {
     user_id: user.id,

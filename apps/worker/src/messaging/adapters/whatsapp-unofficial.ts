@@ -223,11 +223,20 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     // (syncFullHistory). Ingest them as historical so the CRM shows existing conversations/contacts.
     // Idempotent (deduped by provider id); media isn't bulk-downloaded (placeholder) — see toInbound.
     sock.ev.on('messaging-history.set', async (h: any) => {
+      // Names arrive in the sync's chats/contacts arrays, NOT on individual messages — build a
+      // jid→name map so backfilled conversations aren't all "Unknown contact".
+      const nameByJid = new Map<string, string>();
+      for (const ch of h?.chats ?? []) if (ch?.id && ch?.name) nameByJid.set(ch.id, ch.name);
+      for (const ct of h?.contacts ?? []) {
+        const n = ct?.name || ct?.notify || ct?.verifiedName;
+        if (ct?.id && n) nameByJid.set(ct.id, n);
+      }
       const msgs: any[] = h?.messages ?? [];
       let imported = 0;
       for (const msg of msgs) {
         try {
-          const norm = await this.toInbound(userId, sock, msg, { historical: true });
+          const displayName = msg?.key?.remoteJid ? nameByJid.get(msg.key.remoteJid) : undefined;
+          const norm = await this.toInbound(userId, sock, msg, { historical: true, displayName });
           if (norm) {
             await this.inboundHandler?.(norm);
             imported++;
@@ -238,6 +247,11 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
       }
       log.info({ event: 'whatsapp.history.synced', userId, channel: this.channel, count: imported });
     });
+
+    // Contact names also arrive via the address-book sync (fires on connect) — backfill any missing
+    // names so existing nameless conversations get labelled, no re-link needed.
+    sock.ev.on('contacts.upsert', (cs: any[]) => void this.enrichNames(userId, cs));
+    sock.ev.on('contacts.update', (cs: any[]) => void this.enrichNames(userId, cs));
 
     return { state: 'connecting' };
   }
@@ -339,7 +353,7 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     userId: string,
     sock: WASocketT,
     msg: any,
-    opts?: { historical?: boolean },
+    opts?: { historical?: boolean; displayName?: string },
   ): Promise<InboundMessage | null> {
     const jid: string | undefined = msg?.key?.remoteJid;
     if (!jid) return null;
@@ -423,8 +437,9 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
         channel: this.channel,
         channelUserId,
         phoneE164,
-        // pushName on a fromMe echo is OUR name, not the contact's — only trust it for inbound.
-        displayName: !fromMe && typeof msg.pushName === 'string' ? msg.pushName : undefined,
+        // Prefer an explicit name (history sync's chats/contacts); else the live pushName (never on
+        // a fromMe echo — that's OUR name, not the contact's).
+        displayName: opts?.displayName ?? (!fromMe && typeof msg.pushName === 'string' ? msg.pushName : undefined),
       },
       threadKey: `${this.channel}:${channelUserId}`,
       text,
@@ -468,6 +483,31 @@ export class WhatsAppUnofficialProvider implements MessagingProvider {
     } catch (err) {
       log.error({ event: 'whatsapp.media.download_failed', userId, channel: this.channel, errorCode: errorToken(err) });
       return null;
+    }
+  }
+
+  /** Best-effort: fill a missing contact display_name from WhatsApp's address-book sync (never overwrite). */
+  private async enrichNames(userId: string, contacts: any[]): Promise<void> {
+    for (const c of contacts ?? []) {
+      const jid: string = c?.id ?? '';
+      const name = c?.name || c?.notify || c?.verifiedName;
+      if (!jid || !name) continue;
+      const at = jid.indexOf('@');
+      const local = (at >= 0 ? jid.slice(0, at) : jid).split(':')[0] ?? '';
+      const server = at >= 0 ? jid.slice(at + 1) : '';
+      let cuid: string | null = null;
+      if (server === 's.whatsapp.net' && /^\d{7,15}$/.test(local)) cuid = local;
+      else if (server === 'lid') cuid = `${local}@lid`;
+      if (!cuid) continue;
+      try {
+        const { data: link } = await this.deps.sb
+          .from('contact_channels').select('contact_id')
+          .eq('user_id', userId).eq('channel', this.channel).eq('channel_user_id', cuid).maybeSingle();
+        const contactId = (link as { contact_id: string } | null)?.contact_id;
+        if (contactId) {
+          await this.deps.sb.from('contacts').update({ display_name: name }).eq('id', contactId).is('display_name', null);
+        }
+      } catch { /* best-effort */ }
     }
   }
 

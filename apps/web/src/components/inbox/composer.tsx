@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { SendHorizontal, Paperclip, Mic, Square, X } from 'lucide-react';
+import Link from 'next/link';
 import { stageOutbound, type OutboundAttachmentInput } from '@/app/(dashboard)/inbox/actions';
 import { createClient } from '@/lib/supabase/client';
 
@@ -28,6 +29,7 @@ export function Composer({
   onChange: (v: string) => void;
 }) {
   const [status, setStatus] = useState<string | null>(null);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const [pending, startTransition] = useTransition();
   const [sendKey, setSendKey] = useState('Ctrl');
   const [attachment, setAttachment] = useState<Pending | null>(null);
@@ -119,6 +121,7 @@ export function Composer({
     const body = value.trim();
     if ((!body && !attachment) || blocked) return;
     setStatus(null);
+    setNeedsReconnect(false);
     const att = attachment;
     startTransition(async () => {
       const res = await stageOutbound(conversationId, body, att ?? undefined);
@@ -128,6 +131,7 @@ export function Composer({
         setStatus('Sent ✓');
       } else {
         setStatus(res.error ?? 'Failed to send.');
+        setNeedsReconnect(res.code === 'disconnected');
       }
     });
   }
@@ -212,7 +216,19 @@ export function Composer({
           {pending ? 'Sending…' : 'Send'}
         </button>
       </div>
-      {status && <p className="mt-1.5 text-xs text-muted-foreground">{status}</p>}
+      {status && (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {status}
+          {needsReconnect && (
+            <>
+              {' '}
+              <Link href="/settings" className="text-primary underline">
+                Reconnect
+              </Link>
+            </>
+          )}
+        </p>
+      )}
     </div>
   );
 }
