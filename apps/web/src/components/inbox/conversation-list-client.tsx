@@ -32,17 +32,39 @@ export function ConversationListClient({ items }: { items: ConversationListItem[
 
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel('inbox-conversations')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () =>
-        router.refresh(),
-      )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () =>
-        router.refresh(),
-      )
-      .subscribe();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+
+    // Realtime delivers instant updates ONLY if the socket is RLS-authorized — so attach
+    // the user's access token before subscribing (createBrowserClient doesn't always do
+    // this for postgres_changes under SSR). On any message/conversation change we just
+    // re-run the server components (router.refresh) — decryption stays server-side.
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session?.access_token) supabase.realtime.setAuth(session.access_token);
+      channel = supabase
+        .channel('inbox-stream')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () =>
+          router.refresh(),
+        )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () =>
+          router.refresh(),
+        )
+        .subscribe();
+    });
+
+    // Backstop poll: refresh the inbox route (list + any open thread) every few seconds
+    // while the tab is visible, so live updates work even if the Realtime socket isn't
+    // delivering. router.refresh() re-fetches + re-decrypts server-side; cheap at current
+    // scale — loosen or drop once Realtime is confirmed reliable in prod.
+    const poll = setInterval(() => {
+      if (document.visibilityState === 'visible') router.refresh();
+    }, 4000);
+
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      clearInterval(poll);
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [router]);
 
